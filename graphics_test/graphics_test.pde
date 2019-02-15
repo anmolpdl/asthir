@@ -4,21 +4,14 @@ import peasy.*;
 PeasyCam cam;
 //QueasyCam camera;
 
-// button stuff begins
-int rectX, rectY;
-int rectSize = 100;
-color rectColor, rectHighlight;
-boolean rectOver = false;
-// button stuff ends
-
-
 int cols, rows;
 int scl = 20;
-int w = 2000;
+int w = 1600;
 int h = 1600;
 float fill_color;
 
 float dynamic = 0;
+float speed;
 float[][] terrain;
 float[][] water;
 
@@ -30,7 +23,7 @@ void setup() {
   cols = w / scl;
   rows = h / scl;
   terrain = new float[cols][rows];
-  water = new float[cols][rows];
+  water = new float[2*cols][2*rows];
   
   // generating terrain once
   //generate_terrain();
@@ -42,39 +35,34 @@ void setup() {
   //camera.speed = 5;
   //camera.sensitivity = 0.5;
   
-  cam = new PeasyCam(this, w/2, h/2, 200, 750);
+  cam = new PeasyCam(this, w/2, h/2, 300, 600);
   //cam.setMinimumDistance(2);
   cam.setMaximumDistance(2000);
   cam.setSuppressRollRotationMode();
   
-  // button to speed up time
-  rectColor = color(0);
-  rectHighlight = color(51);
-  rectX = 100;
-  rectY = 200;
+  
+  // set speed
+  speed = 0.01;
 }
 
-void draw() {
-  rect(rectX, rectY, rectSize, rectSize);
-  update(mouseX, mouseY);
-  if (rectOver) 
-  {
-    dynamic -= 0.05;
-  }
-  else
-  {
-    dynamic -= 0.01;
-  }
+void draw() 
+{  
+  // lights
+  ambientLight(172, 136, 111);
+  directionalLight(50, 50, 50, 0, 0, -1);
+  pointLight(150, 150, 150, w/2, h/2, 100);
+  sphere(30);
   
-  dynamic -= 0.015;  
+  
+  dynamic -= speed;
   float yoff_w = dynamic;
-  generate_terrain(yoff_w/50);
+  generate_terrain(dynamic/200);
   
   // generating water each draw()
-  for (int y=0; y<rows; y++)
+  for (int y=0; y<2*rows; y++)
   {
     float xoff_w = 0;
-    for (int x=0; x<cols; x++)
+    for (int x=0; x<2*cols; x++)
     {
       water[x][y] = map(noise(xoff_w, yoff_w), 0, 1, -50, 50);
       xoff_w += 0.2;
@@ -84,7 +72,7 @@ void draw() {
   
   
   
-  background(0);
+  background(30);
   stroke(120, 20);
   //camera(mouseX, mouseY, (height/2) / tan(PI/6), mouseX, mouseY, 0, 0, 1, 0); 
   //noFill();
@@ -96,16 +84,16 @@ void draw() {
   
   
   // plotting water
-  for (int y=0; y<rows-1; y++)
+  for (int y=0; y<2*rows-1; y++)
   {
     beginShape(TRIANGLE_STRIP);
-    for (int x=0; x<cols; x++)
+    for (int x=0; x<2*cols; x++)
     {
       //rect(x*scl, y*scl, scl, scl);
       fill_color = map(water[x][y], -130, 130, 0, 255);
       fill(20, 20, 200, 75);
-      vertex(x*scl, y*scl, water[x][y]);
-      vertex(x*scl, (y+1)*scl, water[x][y+1]);
+      vertex((x-cols/2)*scl, (y-rows/2)*scl, water[x][y]);
+      vertex((x-cols/2)*scl, (y+1-rows/2)*scl, water[x][y+1]);
     }
     endShape();
   }
@@ -124,10 +112,6 @@ void draw() {
     }
     endShape();
   }
-  
-  cam.beginHUD();
-  gui();
-  cam.endHUD();
 }
 
 float[] terrain_gradient(float height)
@@ -135,8 +119,8 @@ float[] terrain_gradient(float height)
   float[] terrain_color = {255, 255, 255, 255}; // default snow
   // height between 0 to 1
   
-  float[] colorA = {117, 209, 164, 240}; // green
-  float[] colorB = {242, 189, 137, 250}; // brown
+  float[] colorA = {117, 209, 164, 255}; // green
+  float[] colorB = {242, 189, 137, 255}; // brown
   
   if (height < 0.7)
   {
@@ -151,36 +135,12 @@ float[] terrain_gradient(float height)
     terrain_color[0] = 20;
     terrain_color[1] = 20;
     terrain_color[2] = 200;
-    terrain_color[3] = 100;
+    terrain_color[3] = 75;
   }
   
   return terrain_color;
 }
 
-
-void update(int x, int y)
-{
-  if (overRect(rectX, rectY, rectSize, rectSize))
-  {
-    rectOver = true;
-  }
-  else
-  {
-    rectOver = false;
-  }
-}
-
-boolean overRect(int x, int y, int width, int height)
-{
-  if (mouseX >= x && mouseX <= x+width && mouseY >= y && mouseY <= y+height)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
 
 void generate_terrain(float yoff_t)
 {
@@ -188,7 +148,7 @@ void generate_terrain(float yoff_t)
   float max_height = 250;
   float elev;
   
-  float a = 0.06;
+  float a = 0.09;
   float b = 0.94;
   float c = 2.;
   
@@ -203,8 +163,8 @@ void generate_terrain(float yoff_t)
       float e0 = 1 * noise(1 * xoff_t, 1 * yoff_t);
       float e1 = 0.5 * ridge_noise(2 * xoff_t, 2 * yoff_t);
       float e2 = 0.25 * ridge_noise(4 * xoff_t, 4 * yoff_t);
-      elev = pow((e0 + e1 + e2)/1.5, 4);
-      //float d = 2*max(abs(nx), abs(ny)); // manhattan
+      elev = pow((e0 + e1 + e2)/1.5, 5);
+      //float d = 2*max(abs(x-cols/2), abs(y-rows/2)); // manhattan
       float d = 2*sqrt(pow((x - cols/2)/cols, 2) + pow((y - rows/2)/rows, 2)); // euclidean
 
       elev = (elev + a) * (1 - b*pow(d, c));
@@ -223,7 +183,44 @@ float ridge_noise(float x, float y)
   return 2 * (0.5 - abs(0.5 - noise(x, y)));
 }
 
-void gui()
+void keyPressed()
 {
-  
+  if (key == '1' || key == '!')
+  {
+    speed = 0.01;
+  }
+  switch(key)
+  {
+    case '1':
+    case '!':
+      speed = 0.01;
+      break;
+    case '2':
+    case '@':
+      speed = 0.025;
+      break;
+    case '3':
+    case '#':
+      speed = 0.05;
+      break;
+    case '4':
+    case '$':
+      speed = 0.1;
+      break;
+    case '5':
+    case '%':
+      speed = 0.25;
+      break;
+    case '6':
+    case '^':
+      speed = 0.5;
+      break;
+    case '7':
+    case '&':
+      speed = 2;
+      break;
+    default:
+      speed = 0.01;
+      break;
+  }
 }
