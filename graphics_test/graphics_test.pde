@@ -4,6 +4,7 @@ import peasy.*;
 PeasyCam cam;
 //QueasyCam camera;
 
+//global variables
 int cols, rows;
 int scl = 20;
 int w = 1600;
@@ -12,12 +13,18 @@ float fill_color;
 
 float dynamic = 0;
 float speed;
+
+//to store obtained perlin noise
 float[][] terrain;
 float[][] water;
 
+float playerSpeed = 1;
+
 void setup() {
-  //size(1200, 1200, P3D);
+  //size(600, 600, P3D);
   fullScreen(P3D);
+  
+  //anti aliasing
   smooth(8);
   
   cols = w / scl;
@@ -30,23 +37,43 @@ void setup() {
   
   
   // camera setup
+  //QueasyCam
+  /*camera = new QueasyCam(this);
+  camera.speed = 5;
+  camera.sensitivity = 0.5;*/
   
-  //camera = new QueasyCam(this);
-  //camera.speed = 5;
-  //camera.sensitivity = 0.5;
-  
-  cam = new PeasyCam(this, w/2, h/2, 300, 600);
-  //cam.setMinimumDistance(2);
+  //PeasyCam
+  cam = new PeasyCam(this, w/2, h/2, 800, 0);
   cam.setMaximumDistance(2000);
-  cam.setSuppressRollRotationMode();
+  cam.setRotations(0,PI/2,-PI/6);
+  //cam.setYawRotationMode();
   
+  //CustomCam
   
   // set speed
-  speed = 0.01;
+  //speed = 0.01;
 }
 
 void draw() 
 {  
+  //for custom cam
+  /*beginCamera();
+  camera();
+  //rotateX(PI/8);
+  if(key == 'a')
+    translate(playerSpeed,0,0);
+  switch(key){
+    case 'd':
+      translate(-playerSpeed,0,0);
+    case 'w':
+      translate(0,0,playerSpeed);
+    case 's':
+      translate(0,0,-playerSpeed);
+    case ' ':
+      translate(0,playerSpeed,0);
+  }
+  endCamera();*/
+  //double pos = cam.getDistance();
   // lights
   ambientLight(172, 136, 111);
   directionalLight(50, 50, 50, 0, 0, -1);
@@ -69,16 +96,15 @@ void draw()
     }
     yoff_w += 0.2;
   }
-  
-  
-  
   background(30);
-  stroke(120, 20);
+  stroke(120,20);
+  
+  //queasycam
   //camera(mouseX, mouseY, (height/2) / tan(PI/6), mouseX, mouseY, 0, 0, 1, 0); 
   //noFill();
   
   
-  translate(width/2, height/2+50); //<>//
+  translate(width/2, height/2); //<>//
   rotateX(PI/3);
   translate(-w/2, -h/2);
   
@@ -89,7 +115,6 @@ void draw()
     beginShape(TRIANGLE_STRIP);
     for (int x=0; x<2*cols; x++)
     {
-      //rect(x*scl, y*scl, scl, scl);
       fill_color = map(water[x][y], -130, 130, 0, 255);
       fill(20, 20, 200, 75);
       vertex((x-cols/2)*scl, (y-rows/2)*scl, water[x][y]);
@@ -106,7 +131,7 @@ void draw()
     {
       float[] terrain_color = terrain_gradient(map(terrain[x][y], -100, 250, 0, 1));
       //fill(fill_color, fill_color, fill_color);
-      fill(terrain_color[0], terrain_color[1], terrain_color[2], terrain_color[3]);
+      fill(terrain_color[0], terrain_color[1], terrain_color[2], 255);
       vertex(x*scl, y*scl, terrain[x][y]);
       vertex(x*scl, (y+1)*scl, terrain[x][y+1]);
     }
@@ -130,13 +155,15 @@ float[] terrain_gradient(float height)
     terrain_color[i] = colorA[i] + height*(colorB[i]-colorA[i]);
   }
   } 
-  if (height < 0.25)
+  
+  
+  /*if (height < 0.25)
   {
     terrain_color[0] = 20;
     terrain_color[1] = 20;
     terrain_color[2] = 200;
-    terrain_color[3] = 75;
-  }
+    terrain_color[3] = 255;
+  }*/
   
   return terrain_color;
 }
@@ -185,6 +212,7 @@ float ridge_noise(float x, float y)
 
 void keyPressed()
 {
+  
   if (key == '1' || key == '!')
   {
     speed = 0.01;
@@ -221,6 +249,21 @@ void keyPressed()
       break;
     default:
       speed = 0.01;
+      break;
+  }
+}
+void keyReleased()
+{
+  switch(key)
+  {
+    case 'w':
+    case 'a':
+    case 's':
+    case 'd':
+    case ' ':
+      key = '\0';
+      break;
+    default:
       break;
   }
 }
