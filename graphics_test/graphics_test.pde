@@ -144,7 +144,7 @@ float[] terrain_gradient(float height)
   float[] terrain_color = {255, 255, 255, 255}; // default snow
   // height between 0 to 1
   
-  float[] colorA = {117, 209, 164, 255}; // green
+  float[] colorA = {0, 255, 164, 255}; // green
   float[] colorB = {242, 189, 137, 255}; // brown
   
   if (height < 0.7)
