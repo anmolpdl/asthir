@@ -32,4 +32,5 @@
 *.app
 
 #folders
-/graphics_test/heightmap_template/application.linux32/
+/graphics_test/heightmap_template/application.*/
+/graphics_test/application.*/
