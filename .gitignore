@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+#folders
+/graphics_test/heightmap_template/application.linux32/
