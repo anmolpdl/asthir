@@ -61,7 +61,7 @@ void draw(){
   for (int x = 0; x < cols; x++) 
   {      
     float nx = (float)scl/20*(float)x/12,ny = (float)scl/20*(float)y/12 ;
-    terrain[x][y] = noise(nx, ny);
+    terrain[x][y] = noise(nx+noise(flow_on_land), ny+noise(flow_on_land));
     //xoff+=0.2;
   }
   //yoff+=0.2;
@@ -137,4 +137,42 @@ float [] terrain_gradient(float height)
   } 
   
   return terrain_color;
+}
+
+void keyPressed()
+{
+  switch(key)
+  {
+    case '1':
+    case '!':
+      speed = 0.01;
+      break;
+    case '2':
+    case '@':
+      speed = 0.025;
+      break;
+    case '3':
+    case '#':
+      speed = 0.05;
+      break;
+    case '4':
+    case '$':
+      speed = 0.1;
+      break;
+    case '5':
+    case '%':
+      speed = 0.25;
+      break;
+    case '6':
+    case '^':
+      speed = 0.5;
+      break;
+    case '7':
+    case '&':
+      speed = 2;
+      break;
+    default:
+      speed = 0.01;
+      break;
+  }
 }
