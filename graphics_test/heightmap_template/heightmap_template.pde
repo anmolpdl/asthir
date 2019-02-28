@@ -11,7 +11,7 @@ int cols,rows;
 float[][] terrain;
 float [][] water;
 int watervol = 2;
-PGraphics3D renderer;
+
 //water flows slower on land than in sea
 float flow_on_land;
 float flow_in_sea;
@@ -24,6 +24,12 @@ float cameraheight = 650; //works only for w=h=2000
 float dynamic = 0;
   
 float speed = 0.01;  
+
+//constants for island creation
+//a pushes everything up, b pushes edges down, c controls the quickness of dropoff, set a&b to 0 for default
+float a = 0.2;
+float b = 0.6;
+float c = 1;
 void setup(){
   //camera(w/2,cameraheight,h/2,w/2,cameraheight,h/2,0,1,0);
   
@@ -35,7 +41,7 @@ void setup(){
   cols = w/scl;
   rows = h/scl;
   
-  renderer = (PGraphics3D)g;
+  //renderer = (PGraphics3D)g;
   //dynam alloc memory
   terrain = new float[cols][rows];
   water = new float [watervol*cols][watervol*rows];
@@ -66,7 +72,7 @@ void draw(){
   ambientLight(172, 136, 111);
   directionalLight(50, 50, 50, 0, 0, -1);
   pointLight(150, 150, 150, w/2, h/2, 100);
-  sphere(30);
+//sphere(30);
   //land
   for (int y = 0; y < rows; y++) 
   {
@@ -74,9 +80,7 @@ void draw(){
   {      
     float nx = (float)scl/20*(float)x/12,ny = (float)scl/20*(float)y/12 ;
     terrain[x][y] = noise(nx+noise(flow_on_land), ny+noise(flow_on_land));
-    //xoff+=0.2;
   }
-  //yoff+=0.2;
   }
   
   
@@ -95,20 +99,31 @@ void draw(){
   }
   background(0);
   //land
+  
   for (int y=0; y<rows-1; y++)
   {
     beginShape(TRIANGLE_STRIP);
     for (int x=0;x<cols; x++)
     {
+
+      float dist = sqrt(pow(cols/2-x,2)+pow(rows/2-y,2));
+      //mapping upto sqrt(2) instead of 1 for island illusion
+      float d = map(dist,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
+      float dist1 = sqrt(pow(cols/2-x,2)+pow(rows/2-y-1,2));
+      float d1 = map(dist1,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
+      float e =(terrain[x][y] + a)*(1 - b*pow(d,c));
+      float e1 =(terrain[x][y+1] + a)* (1- b*pow(d1,c));
       //fill(125,125,125);
       //rect(x*scl,y*scl,scl,scl);
       //land, factor is 500
-      float[] terrain_color = terrain_gradient(map(land_factor*terrain[x][y]+cliff, 0, land_factor+cliff, 0, 1));
+      float[] terrain_color = terrain_gradient(map(land_factor*e+cliff, 0, land_factor+cliff, 0, 1));
   
       fill(terrain_color[0], terrain_color[1], terrain_color[2], 255);
       noStroke();
-      vertex((x+rows/2)*scl, (y+cols/2)*scl, land_factor*terrain[x][y]+cliff);
-      vertex((x+rows/2)*scl, (y+cols/2+1)*scl, land_factor*terrain[x][y+1]+cliff);
+      //stroke(terrain_color[0], terrain_color[1], terrain_color[2], 255);
+      
+      vertex((x+rows/2)*scl, (y+cols/2)*scl, land_factor*e+cliff);
+      vertex((x+rows/2)*scl, (y+cols/2+1)*scl, land_factor*e1+cliff);
     }
     endShape();
   }
@@ -120,7 +135,8 @@ void draw(){
     for (int x=0;x<watervol*cols; x++)
     {
       fill(20, 20, 200, 75);
-      stroke(20, 20, 200, 20);
+      noStroke();
+      //stroke(20, 20, 200, 20);
       //rect(x*scl,y*scl,scl,scl);
       //land, factor is 500
       vertex(x*scl, y*scl, water_factor*water[x][y]+sea_level);
@@ -138,12 +154,21 @@ float [] terrain_gradient(float height)
   
   float[] colorA = {0, 255, 0, 255}; // green
   float[] colorB = {242, 189, 137, 255}; // brown
-  if (height < 0.7)
+  float[] sand = {224,205,235,255};
+  if (height < 0.7 && height >0.3)
   {
   height /= 0.7;
   for (int i=0; i<3; i++)
   {
     terrain_color[i] = colorA[i] + height*(colorB[i]-colorA[i]);
+  }
+  }
+  else if (height<0.3)
+  {
+    height /= 0.3;
+  for (int i=0; i<3; i++)
+  {
+    terrain_color[i] = sand[i] + height*(colorB[i]-sand[i]);
   }
   } 
   
@@ -157,7 +182,7 @@ void custompan()
   {
     camera(w/2,cameraheight,h/2,w/2+1,cameraheight,h/2,0,1,0);
     //defining the perspective projection parameters
-    float fov = PI/2.0; // use Pi/1.4-Pi/1.6 for fisheye 
+    float fov = PI/1.8; // use Pi/1.4-Pi/1.6 for fisheye 
     float cameraZ = (height/2.0) / tan(fov/2.0);
     //projection
     perspective(fov, float(width)/float(height), cameraZ/10.0, cameraZ*10.0);
