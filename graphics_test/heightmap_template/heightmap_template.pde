@@ -4,6 +4,7 @@
 import controlP5.*;
 
 ControlP5 cp5;
+Slider speed_slider;
 PGraphics pg;
 PImage start_screen;
 
@@ -55,7 +56,7 @@ void setup(){
   flow_on_land = -speed;
   flow_in_sea = -speed;
   
-  pg = createGraphics(450, 500);
+  pg = createGraphics(450, 600);
   start_screen = loadImage("start_screen.jpg");
   at_start = true;
   
@@ -320,6 +321,7 @@ void keyPressed()
     if (at_start)
     {
       at_start = false;
+      speed_slider = cp5.addSlider("speed").setPosition(80, 530).setSize(250, 50).setRange(0., 2.0).setValue(0.01);
     }
   }
   switch(key)
@@ -327,30 +329,37 @@ void keyPressed()
     case '1':
     case '!':
       speed = 0.01;
+      speed_slider.setValue(0.01);
       break;
     case '2':
     case '@':
       speed = 0.025;
+      speed_slider.setValue(0.025);
       break;
     case '3':
     case '#':
       speed = 0.05;
+      speed_slider.setValue(0.05);
       break;
     case '4':
     case '$':
       speed = 0.1;
+      speed_slider.setValue(0.1);
       break;
     case '5':
     case '%':
       speed = 0.25;
+      speed_slider.setValue(0.25);
       break;
     case '6':
     case '^':
       speed = 0.5;
+      speed_slider.setValue(0.5);
       break;
     case '7':
     case '&':
       speed = 2;
+      speed_slider.setValue(2);
       break;
     default:
       speed = 0.01;
@@ -360,6 +369,7 @@ void keyPressed()
       if (!at_start)
       {
         at_start = true;
+        cp5.remove("speed");
         setup();
       }
   }
