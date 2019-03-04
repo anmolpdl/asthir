@@ -1,12 +1,15 @@
 //import processing.opengl.*;
 //import peasy.*;
 //PeasyCam cam;
+import java.util.*;
+import java.text.*;
 import controlP5.*;
 
 ControlP5 cp5;
 Slider speed_slider;
 PGraphics pg;
 PImage start_screen;
+PImage save_img;
 
 boolean at_start;
 
@@ -48,6 +51,8 @@ void setup(){
   //dynam alloc memory
   terrain = new float[cols][rows];
   water = new float [watervol*cols][watervol*rows];
+  save_img = createImage(cols, rows, RGB);
+  save_img.loadPixels();
   
   flow_on_land = -speed;
   flow_in_sea = -speed;
@@ -162,6 +167,9 @@ void draw(){
         //land factor is 500
         float[] terrain_color = terrain_gradient(map(land_factor*e+cliff, 0, land_factor+cliff, 0, 1));
     
+        // saving to pixels array
+        save_img.pixels[y*cols+x] = color(terrain_color[0], terrain_color[1], terrain_color[2]);
+        
         fill(terrain_color[0], terrain_color[1], terrain_color[2], 255);
         noStroke();
         //stroke(terrain_color[0], terrain_color[1], terrain_color[2], 255);
@@ -187,8 +195,12 @@ void draw(){
       endShape();
     }
     custompan();
+    
+    pushMatrix();
+    camera();
     noLights();
     image(pg, 20, 20);
+    popMatrix();
     //end HUD
     
     
@@ -225,25 +237,25 @@ float [] terrain_gradient(float height)
 
 void custompan()
 {
-    popMatrix();
-    // begin HUD
-    pg.beginDraw();
-    pg.background(100, 100);
-    pg.fill(255, 150);
-    pg.textSize(70);
-    pg.text("Parameters", 40, 100);
-    pg.textSize(40);
-    pg.text("A:", 40, 175);
-    pg.text("B:", 40, 275);
-    pg.text("C:", 40, 375);
-    pg.text("Speed: ", 40, 475);
-    textAlign(RIGHT);
-    pg.text(a, 200, 175);
-    pg.text(b, 200, 275);
-    pg.text(c, 200, 375);
-    pg.text(speed, 200, 475);
-    pg.endDraw();
-    //camera();
+  popMatrix();
+  // begin HUD
+  pg.beginDraw();
+  pg.background(100, 100);
+  pg.fill(255, 150);
+  pg.textSize(70);
+  pg.text("Parameters", 40, 100);
+  pg.textSize(40);
+  pg.text("A:", 40, 175);
+  pg.text("B:", 40, 275);
+  pg.text("C:", 40, 375);
+  pg.text("Speed: ", 40, 475);
+  textAlign(RIGHT);
+  pg.text(a, 200, 175);
+  pg.text(b, 200, 275);
+  pg.text(c, 200, 375);
+  pg.text(speed, 200, 475);
+  pg.endDraw();
+  //camera();
   if (cameraheight>300)
   {
     camera(w/2,cameraheight,h/2,w/2+1,cameraheight,h/2,0,1,0);
@@ -318,6 +330,11 @@ void keyPressed()
   }
   switch(key)
   {
+    case '`':
+    case '~':
+      speed = 0.01;
+      speed_slider.setValue(0);
+      break;
     case '1':
     case '!':
       speed = 0.01;
@@ -364,6 +381,16 @@ void keyPressed()
         cp5.remove("speed");
         setup();
       }
+      break;
+    case 's':
+    case 'S':
+      DateFormat name_format = new SimpleDateFormat("yyyy-MM-dd@HH_mm_ss");
+      Date d = new Date();  
+      String file_name = name_format.format(d);
+      
+      save_img.updatePixels();
+      save_img.save("OUT"+file_name+".jpg");
+      break;
   }
 }
 void keyReleased(){
