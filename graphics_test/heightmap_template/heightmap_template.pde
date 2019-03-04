@@ -22,9 +22,6 @@ int watervol = 2;
 float flow_on_land;
 float flow_in_sea;
 
-//to store multiple key presses
-boolean[] pressed;
-
 float cameraheight = 650; //works only for w=h=2000
 
 float dynamic = 0;
@@ -51,19 +48,20 @@ void setup(){
   //dynam alloc memory
   terrain = new float[cols][rows];
   water = new float [watervol*cols][watervol*rows];
-  pressed = new boolean[256];
   
   flow_on_land = -speed;
   flow_in_sea = -speed;
   
   pg = createGraphics(450, 600);
+  //start screen
   start_screen = loadImage("start_screen.jpg");
   at_start = true;
   
+  //setting up sliders
   cp5 = new ControlP5(this);
-  cp5.addSlider("a").setPosition(300, 200).setSize(200, 20).setRange(0., 0.8);
-  cp5.addSlider("b").setPosition(300, 300).setSize(200, 20).setRange(0.5, 0.8);
-  cp5.addSlider("c").setPosition(300, 400).setSize(200, 20).setRange(0., 3.0);
+  cp5.addSlider("vertical offset").setPosition(4*width/5, height/20).setSize(height/4, width/68).setRange(0., 0.8);
+  cp5.addSlider("edge offset").setPosition(4*width/5, 5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8);
+  cp5.addSlider("edge slope").setPosition(4*width/5, 7*height/60).setSize(height/4, width/68).setRange(0., 3.0);
 }
 
 void draw(){
@@ -71,13 +69,17 @@ void draw(){
   {
     image(start_screen, 0, 0, width, height);
     fill(181, 101, 29, 200);
-    textSize(300);
-    textAlign(CENTER);
-    text("Asthir", width/2, height*1.4/2);
-    textSize(100);
-    text("Press Enter to continue...", width/2, height*1.7/2);
-    
-    // Controls
+    textSize(width/10);
+    textAlign(RIGHT);
+    text("Asthir", width/3, 3*height/5);
+    textSize(width/40);
+    text("Press Enter", width/5, 2*height/3);
+    textSize(width/68);
+    fill(255, 255, 255, 255);
+    textAlign(LEFT);
+    text("Parameters:", 4*width/5, height/30);
+    /*
+    Controls
     textAlign(LEFT);
     textSize(70);
     text("Parameters", 140, 100);
@@ -89,12 +91,14 @@ void draw(){
     text(a, 300, 175);
     text(b, 300, 275);
     text(c, 300, 375);
+    */
   }
   else
   {
-    cp5.remove("a");
-    cp5.remove("b");
-    cp5.remove("c");
+    
+    cp5.remove("vertical offset");
+    cp5.remove("edge offset");
+    cp5.remove("edge slope");
     
     int land_factor = 700;
     int water_factor = 75;
@@ -104,7 +108,6 @@ void draw(){
     //background(135, 206, 250);
     background(0);
     
-    //custompan();
     dynamic -=speed;
     flow_in_sea = dynamic;
     flow_on_land = dynamic/100;
@@ -112,14 +115,11 @@ void draw(){
     pushMatrix();
     translate(w/2,h/2);
     rotateX(PI/2);
-    rotateZ(-PI*1.4/2);
     translate(-w/2,-h/2);
-    //float yoff = 0;
     
     ambientLight(172, 136, 111);
     directionalLight(50, 50, 50, 0, 0, -1);
     pointLight(150, 150, 150, w/2, h/2, 100);
-  //sphere(30);
     //land
     for (int y = 0; y < rows; y++) 
     {
@@ -142,7 +142,6 @@ void draw(){
       else
         water[x][y] = noise(nx, ny+flow_on_land);
     }
-    //flow_in_sea+=0.2;
     }
     
     //land
@@ -159,9 +158,8 @@ void draw(){
         float d1 = map(dist1,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
         float e =(terrain[x][y] + a)*(1 - b*pow(d,c));
         float e1 =(terrain[x][y+1] + a)* (1- b*pow(d1,c));
-        //fill(125,125,125);
-        //rect(x*scl,y*scl,scl,scl);
-        //land, factor is 500
+        
+        //land factor is 500
         float[] terrain_color = terrain_gradient(map(land_factor*e+cliff, 0, land_factor+cliff, 0, 1));
     
         fill(terrain_color[0], terrain_color[1], terrain_color[2], 255);
@@ -182,36 +180,13 @@ void draw(){
       {
         fill(20, 20, 200, 75);
         noStroke();
-        //stroke(20, 20, 200, 20);
-        //rect(x*scl,y*scl,scl,scl);
-        //land, factor is 500
+
         vertex(x*scl, y*scl, water_factor*water[x][y]+sea_level);
         vertex(x*scl, (y+1)*scl, water_factor*water[x][y+1]+sea_level);
       }
       endShape();
     }
-    popMatrix();
-    
-    
-    // begin HUD
-    pg.beginDraw();
-    pg.background(100, 100);
-    pg.fill(255, 150);
-    pg.textSize(70);
-    pg.text("Parameters", 40, 100);
-    pg.textSize(40);
-    pg.text("A:", 40, 175);
-    pg.text("B:", 40, 275);
-    pg.text("C:", 40, 375);
-    pg.text("Speed: ", 40, 475);
-    textAlign(RIGHT);
-    pg.text(a, 200, 175);
-    pg.text(b, 200, 275);
-    pg.text(c, 200, 375);
-    pg.text(speed, 200, 475);
-    pg.endDraw();
-    
-    camera();
+    custompan();
     noLights();
     image(pg, 20, 20);
     //end HUD
@@ -250,16 +225,34 @@ float [] terrain_gradient(float height)
 
 void custompan()
 {
-  //float cameraZ = ((h/2.0)/tan(PI*60/360));
+    popMatrix();
+    // begin HUD
+    pg.beginDraw();
+    pg.background(100, 100);
+    pg.fill(255, 150);
+    pg.textSize(70);
+    pg.text("Parameters", 40, 100);
+    pg.textSize(40);
+    pg.text("A:", 40, 175);
+    pg.text("B:", 40, 275);
+    pg.text("C:", 40, 375);
+    pg.text("Speed: ", 40, 475);
+    textAlign(RIGHT);
+    pg.text(a, 200, 175);
+    pg.text(b, 200, 275);
+    pg.text(c, 200, 375);
+    pg.text(speed, 200, 475);
+    pg.endDraw();
+    //camera();
   if (cameraheight>300)
   {
     camera(w/2,cameraheight,h/2,w/2+1,cameraheight,h/2,0,1,0);
     //defining the perspective projection parameters
-    float fov = PI/1.8; // use Pi/1.4-Pi/1.6 for fisheye 
+    float fov = PI/2; // use Pi/1.4-Pi/1.6 for fisheye 
     float cameraZ = (height/2.0) / tan(fov/2.0);
+    
     //projection
     perspective(fov, float(width)/float(height), cameraZ/10.0, cameraZ*10.0);
-    
     
     /*
     note: source code for projection(perspective):
@@ -315,7 +308,6 @@ void custompan()
 
 void keyPressed()
 {
-  pressed[keyCode] = true;
   if (keyCode == ENTER)
   {
     if (at_start)
@@ -375,5 +367,4 @@ void keyPressed()
   }
 }
 void keyReleased(){
-  pressed[keyCode] = false;
 }
