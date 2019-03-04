@@ -5,7 +5,7 @@ import controlP5.*;
 
 ControlP5 cp5;
 Slider speed_slider;
-PGraphics pg;
+
 PImage start_screen;
 
 //start screen boolean
@@ -29,6 +29,7 @@ float cameraposY = 650; //works only for w=h=2000
 float dynamic = 0;
   
 float speed = 0.01;  
+float fov = PI/3; // use Pi/1.4-Pi/1.6 for fisheye
 
 //constants for island creation
 //a pushes everything up, b pushes edges down, c controls the quickness of dropoff, set a&b to 0 for default
@@ -37,7 +38,7 @@ float b = 0.6;
 float c = 1;
  
 //field of view
-float fov = PI/2; // use Pi/1.4-Pi/1.6 for fisheye 
+
 
 //for temporarily storing the 3D matrix before rendering GUI
 PMatrix3D currCameraMatrix;
@@ -62,7 +63,6 @@ void setup(){
   flow_on_land = -speed;
   flow_in_sea = -speed;
   
-  pg = createGraphics(width/3, int(height/1.3));
   //start screen
   start_screen = loadImage("start_screen.jpg");
   at_start = true;
@@ -71,7 +71,7 @@ void setup(){
   cp5 = new ControlP5(this);
   cp5.addSlider("a").setPosition(4*width/5, height/20).setSize(height/4, width/68).setRange(0., 0.8).setValue(a).setCaptionLabel("vertical offset");
   cp5.addSlider("b").setPosition(4*width/5, 5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8).setValue(b).setCaptionLabel("edge offset");
-  cp5.addSlider("c").setPosition(4*width/5, 7*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge slope");
+  cp5.addSlider("c").setPosition(4*width/5, 7*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge exponent");
 }
 
 void draw()
@@ -91,20 +91,6 @@ void draw()
     fill(255, 255, 255, 255);
     textAlign(LEFT);
     text("Parameters:", 4*width/5, height/30);
-    /*
-    Controls
-    textAlign(LEFT);
-    textSize(70);
-    text("Parameters", 140, 100);
-    textSize(40);
-    text("A:", 140, 175);
-    text("B:", 140, 275);
-    text("C:", 140, 375);
-    
-    text(a, 300, 175);
-    text(b, 300, 275);
-    text(c, 300, 375);
-    */
   }
   else
   {
@@ -199,41 +185,18 @@ void draw()
     
     if (!startflag)
     {
+      
       pushMatrix();
-      speed_slider = cp5.addSlider("speed").setSize(500, 100).setRange(0., 2.0).setPosition(-500,200);
+      speed_slider = cp5.addSlider("speed").setSize(10*width/41, height/8).setRange(0., 2.0).setPosition(cameraposX,cameraposY);
       speed_slider.setValue(speed);
       //so sliders don't get drawn automatically in 3D space and only on the static camera()
       cp5.setAutoDraw(false);
-      
-      cp5.remove("a");
-      cp5.remove("b");
-      cp5.remove("c");
       startflag =true;
     }
     
     guisetup();
-    pg.beginDraw();
-    
-    pg.background(0, 0);
-    pg.fill(255, 255,255);
-    pg.textSize(70);
-    pg.text("Parameters", 40, 80);
-    pg.textSize(40);
-    pg.text("vertical offset:", 40, 155);
-    pg.text("edge offset:", 40, 255);
-    pg.text("edge slope:", 40, 355);
-    pg.text("Speed: ", 40, 455);
-    textAlign(RIGHT);
-    pg.text(a, 320, 155);
-    pg.text(b, 320, 255);
-    pg.text(c, 320, 355);
-    pg.text(speed, 160, 455);
-    
-    image(pg, -500, -300);
-    pg.endDraw();
     popMatrix();
     custompan();
-    
     //end HUD
   }
   //popMatrix();
@@ -271,15 +234,24 @@ void custompan()
 {
   if (cameraposY>300)
   {
-    camera(cameraposX,cameraposY,cameraposZ,cameraposX+1,cameraposY,cameraposZ,0,1,0);
+    camera(cameraposX,cameraposY,cameraposZ,cameraposX+100,cameraposY,cameraposZ,0,1,0);
     
     //defining the perspective projection parameters
-    
+     
     float cameraZ = (height/2.0) / tan(fov/2.0);
     
     //projection
     perspective(fov, float(width)/float(height), cameraZ/10.0, cameraZ*10.0);
-    
+    cameraposY-=speed;
+   }
+   else
+  {
+    beginCamera();
+    translate(w,cameraposY,h/2);
+    rotateY(-speed/100);
+    translate(-w,-cameraposY,-h/2);
+    endCamera();
+  }
     /*
     note: source code for projection(perspective):
     for later reference, can be modified along with frustum
@@ -319,17 +291,6 @@ void custompan()
 
     updateProjmodelview();
   }*/
-    
-    cameraposY-=speed;
-  }
-  else
-  {
-    beginCamera();
-    translate(w,cameraposY,h/2);
-    rotateY(-speed/100);
-    translate(-w,-cameraposY,-h/2);
-    endCamera();
-  }
 }
 void guisetup(){
    hint(DISABLE_DEPTH_TEST);
