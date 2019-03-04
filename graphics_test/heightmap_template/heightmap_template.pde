@@ -8,6 +8,7 @@ Slider speed_slider;
 PGraphics pg;
 PImage start_screen;
 
+//start screen boolean
 boolean at_start;
 
 int w =2000;
@@ -21,8 +22,9 @@ int watervol = 2;
 //water flows slower on land than in sea
 float flow_on_land;
 float flow_in_sea;
-
-float cameraheight = 650; //works only for w=h=2000
+float cameraposX = w/2;
+float cameraposZ = h/2;
+float cameraposY = 650; //works only for w=h=2000
 
 float dynamic = 0;
   
@@ -33,8 +35,17 @@ float speed = 0.01;
 float a = 0.2;
 float b = 0.6;
 float c = 1;
+ 
+//field of view
+float fov = PI/2; // use Pi/1.4-Pi/1.6 for fisheye 
+
+//for temporarily storing the 3D matrix before rendering GUI
+PMatrix3D currCameraMatrix;
+PGraphics3D g3;
+
+boolean startflag = false;
+
 void setup(){
-  //camera(w/2,cameraheight,h/2,w/2,cameraheight,h/2,0,1,0);
   
   //cam = new PeasyCam(this, w/2, h/2, 1000, 0);
   //cam.setMaximumDistance(3000);
@@ -44,7 +55,6 @@ void setup(){
   cols = w/scl;
   rows = h/scl;
   
-  //renderer = (PGraphics3D)g;
   //dynam alloc memory
   terrain = new float[cols][rows];
   water = new float [watervol*cols][watervol*rows];
@@ -52,21 +62,24 @@ void setup(){
   flow_on_land = -speed;
   flow_in_sea = -speed;
   
-  pg = createGraphics(450, 600);
+  pg = createGraphics(width/3, int(height/1.3));
   //start screen
   start_screen = loadImage("start_screen.jpg");
   at_start = true;
   
   //setting up sliders
   cp5 = new ControlP5(this);
-  cp5.addSlider("vertical offset").setPosition(4*width/5, height/20).setSize(height/4, width/68).setRange(0., 0.8);
-  cp5.addSlider("edge offset").setPosition(4*width/5, 5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8);
-  cp5.addSlider("edge slope").setPosition(4*width/5, 7*height/60).setSize(height/4, width/68).setRange(0., 3.0);
+  cp5.addSlider("a").setPosition(4*width/5, height/20).setSize(height/4, width/68).setRange(0., 0.8).setValue(a).setCaptionLabel("vertical offset");
+  cp5.addSlider("b").setPosition(4*width/5, 5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8).setValue(b).setCaptionLabel("edge offset");
+  cp5.addSlider("c").setPosition(4*width/5, 7*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge slope");
 }
 
-void draw(){
+void draw()
+{
+  //pushMatrix();
   if (at_start)
   {
+    
     image(start_screen, 0, 0, width, height);
     fill(181, 101, 29, 200);
     textSize(width/10);
@@ -95,18 +108,13 @@ void draw(){
   }
   else
   {
-    
-    cp5.remove("vertical offset");
-    cp5.remove("edge offset");
-    cp5.remove("edge slope");
-    
     int land_factor = 700;
     int water_factor = 75;
     int sea_level = 200;
     int cliff = 25;
     
-    //background(135, 206, 250);
-    background(0);
+    background(135, 206, 250);
+   // background(0);
     
     dynamic -=speed;
     flow_in_sea = dynamic;
@@ -186,13 +194,49 @@ void draw(){
       }
       endShape();
     }
+    
+    //beginHUD
+    
+    if (!startflag)
+    {
+      pushMatrix();
+      speed_slider = cp5.addSlider("speed").setSize(500, 100).setRange(0., 2.0).setPosition(-500,200);
+      speed_slider.setValue(speed);
+      //so sliders don't get drawn automatically in 3D space and only on the static camera()
+      cp5.setAutoDraw(false);
+      
+      cp5.remove("a");
+      cp5.remove("b");
+      cp5.remove("c");
+      startflag =true;
+    }
+    
+    guisetup();
+    pg.beginDraw();
+    
+    pg.background(0, 0);
+    pg.fill(255, 255,255);
+    pg.textSize(70);
+    pg.text("Parameters", 40, 80);
+    pg.textSize(40);
+    pg.text("vertical offset:", 40, 155);
+    pg.text("edge offset:", 40, 255);
+    pg.text("edge slope:", 40, 355);
+    pg.text("Speed: ", 40, 455);
+    textAlign(RIGHT);
+    pg.text(a, 320, 155);
+    pg.text(b, 320, 255);
+    pg.text(c, 320, 355);
+    pg.text(speed, 160, 455);
+    
+    image(pg, -500, -300);
+    pg.endDraw();
+    popMatrix();
     custompan();
-    noLights();
-    image(pg, 20, 20);
+    
     //end HUD
-    
-    
   }
+  //popMatrix();
 }
 
 float [] terrain_gradient(float height)
@@ -225,30 +269,12 @@ float [] terrain_gradient(float height)
 
 void custompan()
 {
-    popMatrix();
-    // begin HUD
-    pg.beginDraw();
-    pg.background(100, 100);
-    pg.fill(255, 150);
-    pg.textSize(70);
-    pg.text("Parameters", 40, 100);
-    pg.textSize(40);
-    pg.text("A:", 40, 175);
-    pg.text("B:", 40, 275);
-    pg.text("C:", 40, 375);
-    pg.text("Speed: ", 40, 475);
-    textAlign(RIGHT);
-    pg.text(a, 200, 175);
-    pg.text(b, 200, 275);
-    pg.text(c, 200, 375);
-    pg.text(speed, 200, 475);
-    pg.endDraw();
-    //camera();
-  if (cameraheight>300)
+  if (cameraposY>300)
   {
-    camera(w/2,cameraheight,h/2,w/2+1,cameraheight,h/2,0,1,0);
+    camera(cameraposX,cameraposY,cameraposZ,cameraposX+1,cameraposY,cameraposZ,0,1,0);
+    
     //defining the perspective projection parameters
-    float fov = PI/2; // use Pi/1.4-Pi/1.6 for fisheye 
+    
     float cameraZ = (height/2.0) / tan(fov/2.0);
     
     //projection
@@ -294,17 +320,26 @@ void custompan()
     updateProjmodelview();
   }*/
     
-    cameraheight-=speed;
+    cameraposY-=speed;
   }
   else
   {
     beginCamera();
-    translate(w,cameraheight,h/2);
+    translate(w,cameraposY,h/2);
     rotateY(-speed/100);
-    translate(-w,-cameraheight,-h/2);
+    translate(-w,-cameraposY,-h/2);
     endCamera();
   }
 }
+void guisetup(){
+   hint(DISABLE_DEPTH_TEST);
+   PMatrix3D currCameraMatrix = new PMatrix3D(((PGraphics3D)g).camera);
+   camera();
+   noLights();
+   cp5.draw();
+   ((PGraphics3D)g).camera = currCameraMatrix;
+   hint(ENABLE_DEPTH_TEST); 
+   }
 
 void keyPressed()
 {
@@ -313,48 +348,54 @@ void keyPressed()
     if (at_start)
     {
       at_start = false;
-      speed_slider = cp5.addSlider("speed").setPosition(80, 530).setSize(250, 50).setRange(0., 2.0).setValue(0.01);
+      
     }
   }
+  if (!at_start)
+  {
   switch(key)
   {
+    case '0':
+      speed = 0;
+            speed_slider.setValue(speed);
+      break;
     case '1':
     case '!':
       speed = 0.01;
-      speed_slider.setValue(0.01);
+            speed_slider.setValue(speed);
       break;
     case '2':
     case '@':
       speed = 0.025;
-      speed_slider.setValue(0.025);
+            speed_slider.setValue(speed);
       break;
     case '3':
     case '#':
       speed = 0.05;
-      speed_slider.setValue(0.05);
+            speed_slider.setValue(speed);
       break;
     case '4':
     case '$':
       speed = 0.1;
-      speed_slider.setValue(0.1);
+            speed_slider.setValue(speed);
       break;
     case '5':
     case '%':
       speed = 0.25;
-      speed_slider.setValue(0.25);
+            speed_slider.setValue(speed);
       break;
     case '6':
     case '^':
       speed = 0.5;
-      speed_slider.setValue(0.5);
+            speed_slider.setValue(speed);
       break;
     case '7':
     case '&':
       speed = 2;
-      speed_slider.setValue(2);
+            speed_slider.setValue(speed);
       break;
     default:
-      speed = 0.01;
+
       break;
     case 'r':
     case 'R':
@@ -365,6 +406,8 @@ void keyPressed()
         setup();
       }
   }
+  }
 }
 void keyReleased(){
+
 }
