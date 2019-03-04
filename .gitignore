@@ -37,3 +37,4 @@ OUT*.jpg
 #folders
 /graphics_test/heightmap_template/application.*/
 /graphics_test/application.*/
+/references/
