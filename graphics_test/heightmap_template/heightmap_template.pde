@@ -2,11 +2,14 @@
 //import peasy.*;
 //PeasyCam cam;
 import controlP5.*;
+import java.util.*;
+import java.text.*;
 
 ControlP5 cp5;
 Slider speed_slider;
 
 PImage start_screen;
+PImage save_img;
 
 //start screen boolean
 boolean at_start;
@@ -59,6 +62,8 @@ void setup(){
   //dynam alloc memory
   terrain = new float[cols][rows];
   water = new float [watervol*cols][watervol*rows];
+  save_img = createImage(cols, rows, RGB);
+  save_img.loadPixels();
   
   flow_on_land = -speed;
   flow_in_sea = -speed;
@@ -155,7 +160,10 @@ void draw()
         
         //land factor is 500
         float[] terrain_color = terrain_gradient(map(land_factor*e+cliff, 0, land_factor+cliff, 0, 1));
-    
+        
+        // saving to pixels array
+        save_img.pixels[y*cols+x] = color(terrain_color[0], terrain_color[1], terrain_color[2]);
+        
         fill(terrain_color[0], terrain_color[1], terrain_color[2], 255);
         noStroke();
         //stroke(terrain_color[0], terrain_color[1], terrain_color[2], 255);
@@ -366,6 +374,16 @@ void keyPressed()
         cp5.remove("speed");
         setup();
       }
+      break;
+     case 's':
+     case 'S':
+      DateFormat name_format = new SimpleDateFormat("yyyy-MM-dd@HH_mm_ss");
+      Date d = new Date();  
+      String file_name = name_format.format(d);
+
+      save_img.updatePixels();
+      save_img.save("./images/OUT"+file_name+".jpg");
+      break;
   }
   }
 }
