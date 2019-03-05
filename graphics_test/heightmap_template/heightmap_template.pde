@@ -1,53 +1,35 @@
-//import processing.opengl.*;
-//import peasy.*;
-//PeasyCam cam;
 import controlP5.*;
 import java.util.*;
 import java.text.*;
 
+//for sliders
 ControlP5 cp5;
 Slider speed_slider;
 
-PImage start_screen;
-PImage save_img;
+PImage start_screen, save_img;
 
-//start screen boolean
-boolean at_start;
+//start screen booleans
+boolean at_start, startflag;
 
-int w =2000;
-int h =2000;
-int scl = 20;
-int cols,rows;
-float[][] terrain;
-float [][] water;
-int watervol = 2;
+//width, height, pixel density, watervol
+int w, h, scl, cols, rows, watervol;
 
-//water flows slower on land than in sea
-float flow_on_land;
-float flow_in_sea;
-float cameraposX = w/2;
-float cameraposZ = h/2;
-float cameraposY = 650; //works only for w=h=2000
+float[][] terrain, water;
 
-float dynamic = 0;
-  
-float speed = 0.01;  
-float fov = PI/3; // use Pi/1.4-Pi/1.6 for fisheye
+float flow_on_land, flow_in_sea; //water flows slower on land than in sea
+float cameraposX, cameraposY, cameraposZ;
+float dynamic, speed, fov; // dynamic = level of dynamicness of terrain, use fov = Pi/1.4-Pi/1.6 for fisheye
 
 //constants for island creation
 //a pushes everything up, b pushes edges down, c controls the quickness of dropoff, set a&b to 0 for default
-float a = 0.2;
-float b = 0.6;
-float c = 1;
- 
-//field of view
+float a, b, c;
 
+//terrain adjustment factors
+int land_factor, water_factor, sea_level, cliff;
 
 //for temporarily storing the 3D matrix before rendering GUI
 PMatrix3D currCameraMatrix;
 PGraphics3D g3;
-
-boolean startflag = false;
 
 void setup(){
   
@@ -55,22 +37,44 @@ void setup(){
   //cam.setMaximumDistance(3000);
 
   fullScreen(P3D);
-  smooth(4);
+  smooth(4); // anti aliasing
+  
+  w =2000;
+  h =2000;
+  scl = 20; //pixel density
+  watervol = 2;
+  
+  //position of camera
+  cameraposX = w/2;
+  cameraposZ = h/2;
+  cameraposY = 650; //works only for w=h=2000
+ 
   cols = w/scl;
   rows = h/scl;
+  
+  dynamic = 0;
+  speed = 0.01;
+  fov = PI/3; // use Pi/1.4-Pi/1.6 for fisheye
+  
+  a = 0.2;
+  b = 0.6;
+  c = 1;
+  
+  land_factor = 700;
+  water_factor = 75;
+  sea_level = 200;
+  cliff = 25;
   
   //dynam alloc memory
   terrain = new float[cols][rows];
   water = new float [watervol*cols][watervol*rows];
   save_img = createImage(cols, rows, RGB);
   save_img.loadPixels();
-  
-  flow_on_land = -speed;
-  flow_in_sea = -speed;
-  
+
   //start screen
   start_screen = loadImage("start_screen.jpg");
   at_start = true;
+  startflag = false;
   
   //setting up sliders
   cp5 = new ControlP5(this);
@@ -81,10 +85,8 @@ void setup(){
 
 void draw()
 {
-  //pushMatrix();
   if (at_start)
   {
-    
     image(start_screen, 0, 0, width, height);
     fill(181, 101, 29, 200);
     textSize(width/10);
@@ -97,15 +99,10 @@ void draw()
     textAlign(LEFT);
     text("Parameters:", 4*width/5, height/30);
   }
+  
   else
   {
-    int land_factor = 700;
-    int water_factor = 75;
-    int sea_level = 200;
-    int cliff = 25;
-    
     background(135, 206, 250);
-   // background(0);
     
     dynamic -=speed;
     flow_in_sea = dynamic;
@@ -115,34 +112,11 @@ void draw()
     translate(w/2,h/2);
     rotateX(PI/2);
     translate(-w/2,-h/2);
+
+    dynamic_lighting();
+    generate_noise();
     
-    ambientLight(172, 136, 111);
-    directionalLight(50, 50, 50, 0, 0, -1);
-    pointLight(150, 150, 150, w/2, h/2, 100);
-    //land
-    for (int y = 0; y < rows; y++) 
-    {
-    for (int x = 0; x < cols; x++) 
-    {      
-      float nx = (float)scl/20*(float)x/12,ny = (float)scl/20*(float)y/12 ;
-      terrain[x][y] = noise(nx+noise(flow_on_land), ny+noise(flow_on_land));
-    }
-    }
-    
-    
-    //water
-    for (int y = 0; y < watervol*rows; y++) 
-    {
-    for (int x = 0; x < watervol*cols; x++) 
-    {      
-      float nx = float(scl)/20*(float)x/5,ny = float(scl)/20*(float)y/5 ;
-      if ((y<cols/2+cliff || y>3*cols/2-cliff) ||(x<rows/2+cliff ||x>3*rows/2-cliff))
-        water[x][y] = noise(nx, ny+flow_in_sea);
-      else
-        water[x][y] = noise(nx, ny+flow_on_land);
-    }
-    }
-    
+    //draw the actual thing
     //land
     for (int y=0; y<rows-1; y++)
     {
@@ -208,6 +182,39 @@ void draw()
     //end HUD
   }
   //popMatrix();
+}
+void dynamic_lighting()
+{
+    ambientLight(172, 136, 111);
+    directionalLight(50, 50, 50, 0, 0, -1);
+    pointLight(150, 150, 150, w/2, h/2, 100);
+}
+
+void generate_noise()
+{
+    //land
+    for (int y = 0; y < rows; y++) 
+    {
+    for (int x = 0; x < cols; x++) 
+    {      
+      float nx = (float)scl/20*(float)x/12,ny = (float)scl/20*(float)y/12 ;
+      terrain[x][y] = noise(nx+noise(flow_on_land), ny+noise(flow_on_land));
+    }
+    }
+    
+    
+    //water
+    for (int y = 0; y < watervol*rows; y++) 
+    {
+    for (int x = 0; x < watervol*cols; x++) 
+    {      
+      float nx = float(scl)/20*(float)x/5,ny = float(scl)/20*(float)y/5 ;
+      if ((y<cols/2+cliff || y>3*cols/2-cliff) ||(x<rows/2+cliff ||x>3*rows/2-cliff))
+        water[x][y] = noise(nx, ny+flow_in_sea);
+      else
+        water[x][y] = noise(nx, ny+flow_on_land);
+    }
+    }
 }
 
 float [] terrain_gradient(float height)
