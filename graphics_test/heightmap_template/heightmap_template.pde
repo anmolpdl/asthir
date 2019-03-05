@@ -391,7 +391,8 @@ void keyPressed()
       String file_name = name_format.format(d);
 
       save_img.updatePixels();
-      save_img.save("./images/IMG"+file_name+".jpg");
+      saveFrame("./images/SCRNSHT"+file_name+".jpg");
+      save_img.save("./images/MAP"+file_name+".jpg");
       datafile  = createWriter("./images/DATA"+file_name+".txt");
       //to store noise data
       datafile.println("a:"+str(a)+",b:"+str(b)+",c:"+str(c));
