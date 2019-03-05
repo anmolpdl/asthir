@@ -1,3 +1,4 @@
+
 import controlP5.*;
 import java.util.*;
 import java.text.*;
@@ -41,7 +42,7 @@ void setup(){
   
   w =2000;
   h =2000;
-  scl = 20; //pixel density
+  scl = 10; //pixel density
   watervol = 2;
   
   //position of camera
@@ -69,7 +70,7 @@ void setup(){
   terrain = new float[cols][rows];
   water = new float [watervol*cols][watervol*rows];
   save_img = createImage(cols, rows, RGB);
-  save_img.loadPixels();
+  
 
   //start screen
   start_screen = loadImage("start_screen.jpg");
@@ -78,15 +79,17 @@ void setup(){
   
   //setting up sliders
   cp5 = new ControlP5(this);
-  cp5.addSlider("a").setPosition(4*width/5, height/20).setSize(height/4, width/68).setRange(0., 0.8).setValue(a).setCaptionLabel("vertical offset");
-  cp5.addSlider("b").setPosition(4*width/5, 5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8).setValue(b).setCaptionLabel("edge offset");
-  cp5.addSlider("c").setPosition(4*width/5, 7*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge exponent");
+  cp5.addSlider("a").setPosition(4*width/5, 1.5*height/60).setSize(height/4, width/68).setRange(0., 0.8).setValue(a).setCaptionLabel("vertical offset");
+  cp5.addSlider("b").setPosition(4*width/5, 3.5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8).setValue(b).setCaptionLabel("edge offset");
+  cp5.addSlider("c").setPosition(4*width/5, 5.5*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge exponent");
+  //cp5.addSlider("fov").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(PI/4, PI/1.1);
 }
 
 void draw()
 {
   if (at_start)
   {
+    //make start screen
     image(start_screen, 0, 0, width, height);
     fill(181, 101, 29, 200);
     textSize(width/10);
@@ -94,10 +97,10 @@ void draw()
     text("Asthir", width/3, 3*height/5);
     textSize(width/40);
     text("Press Enter", width/5, 2*height/3);
-    textSize(width/68);
+    textSize(width/80);
     fill(255, 255, 255, 255);
     textAlign(LEFT);
-    text("Parameters:", 4*width/5, height/30);
+    text("Parameters:", 4*width/5, height/50);
   }
   
   else
@@ -116,6 +119,7 @@ void draw()
     dynamic_lighting();
     generate_noise();
     
+    save_img.loadPixels();
     //draw the actual thing
     //land
     for (int y=0; y<rows-1; y++)
@@ -123,7 +127,6 @@ void draw()
       beginShape(TRIANGLE_STRIP);
       for (int x=0;x<cols; x++)
       {
-  
         float dist = sqrt(pow(cols/2-x,2)+pow(rows/2-y,2));
         //mapping upto sqrt(2) instead of 1 for island illusion
         float d = map(dist,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
@@ -137,17 +140,15 @@ void draw()
         
         // saving to pixels array
         save_img.pixels[y*cols+x] = color(terrain_color[0], terrain_color[1], terrain_color[2]);
-        
+        save_img.pixels[(y+1)*cols+x] = color(terrain_color[0], terrain_color[1], terrain_color[2]);
         fill(terrain_color[0], terrain_color[1], terrain_color[2], 255);
         noStroke();
-        //stroke(terrain_color[0], terrain_color[1], terrain_color[2], 255);
-        
         vertex((x+rows/2)*scl, (y+cols/2)*scl, land_factor*e+cliff);
         vertex((x+rows/2)*scl, (y+cols/2+1)*scl, land_factor*e1+cliff);
       }
       endShape();
     }
-    
+    save_img.updatePixels();
     //water
     for (int y=0; y<watervol*rows-1; y++)
     {
@@ -156,7 +157,6 @@ void draw()
       {
         fill(20, 20, 200, 75);
         noStroke();
-
         vertex(x*scl, y*scl, water_factor*water[x][y]+sea_level);
         vertex(x*scl, (y+1)*scl, water_factor*water[x][y+1]+sea_level);
       }
@@ -167,15 +167,14 @@ void draw()
     
     if (!startflag)
     {
-      
       pushMatrix();
-      speed_slider = cp5.addSlider("speed").setSize(10*width/41, height/8).setRange(0., 2.0).setPosition(cameraposX,cameraposY);
+      speed_slider = cp5.addSlider("speed").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(0., 2.0);
       speed_slider.setValue(speed);
+      
       //so sliders don't get drawn automatically in 3D space and only on the static camera()
       cp5.setAutoDraw(false);
       startflag =true;
     }
-    
     guisetup();
     popMatrix();
     custompan();
@@ -201,7 +200,6 @@ void generate_noise()
       terrain[x][y] = noise(nx+noise(flow_on_land), ny+noise(flow_on_land));
     }
     }
-    
     
     //water
     for (int y = 0; y < watervol*rows; y++) 
@@ -313,6 +311,7 @@ void guisetup(){
    camera();
    noLights();
    cp5.draw();
+   image(save_img,20,20,100,100);
    ((PGraphics3D)g).camera = currCameraMatrix;
    hint(ENABLE_DEPTH_TEST); 
    }
@@ -333,42 +332,42 @@ void keyPressed()
   {
     case '0':
       speed = 0;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     case '1':
     case '!':
       speed = 0.01;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     case '2':
     case '@':
       speed = 0.025;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     case '3':
     case '#':
       speed = 0.05;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     case '4':
     case '$':
       speed = 0.1;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     case '5':
     case '%':
       speed = 0.25;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     case '6':
     case '^':
       speed = 0.5;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     case '7':
     case '&':
       speed = 2;
-            speed_slider.setValue(speed);
+      speed_slider.setValue(speed);
       break;
     default:
 
@@ -379,6 +378,7 @@ void keyPressed()
       {
         at_start = true;
         cp5.remove("speed");
+        popMatrix();
         setup();
       }
       break;
@@ -393,7 +393,4 @@ void keyPressed()
       break;
   }
   }
-}
-void keyReleased(){
-
 }
