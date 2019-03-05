@@ -8,6 +8,8 @@ ControlP5 cp5;
 Slider speed_slider;
 
 PImage start_screen, save_img;
+//for img parameters
+PrintWriter datafile;
 
 //start screen booleans
 boolean at_start, startflag;
@@ -385,11 +387,16 @@ void keyPressed()
      case 's':
      case 'S':
       DateFormat name_format = new SimpleDateFormat("yyyy-MM-dd@HH_mm_ss");
-      Date d = new Date();  
+      Date d = new Date();
       String file_name = name_format.format(d);
 
       save_img.updatePixels();
-      save_img.save("./images/OUT"+file_name+".jpg");
+      save_img.save("./images/IMG"+file_name+".jpg");
+      datafile  = createWriter("./images/DATA"+file_name+".txt");
+      //to store noise data
+      datafile.println("a:"+str(a)+",b:"+str(b)+",c:"+str(c));
+      datafile.flush();
+      datafile.close();
       break;
   }
   }
