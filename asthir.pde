@@ -42,6 +42,7 @@ PGraphics3D g3;
 
 void setup(){
   
+  Perlin.setup(this, 512);
   //cam = new PeasyCam(this, w/2, h/2, 1000, 0);
   //cam.setMaximumDistance(3000);
 
@@ -324,12 +325,18 @@ void dynamic_lighting()
 void generate_noise()
 {
     //land
+    int terrain_octave = 10;
+    float terrain_persistence = 0.35;
+
     for (int y = 0; y < rows; y++) 
     {
     for (int x = 0; x < cols; x++) 
     {      
       float nx = (float)scl/20*(float)x/12,ny = (float)scl/20*(float)y/12 ;
-      terrain[x][y] = noise(nx+noise(flow_on_land), ny+noise(flow_on_land));
+      terrain[x][y] = Perlin.get_OctaveNoise(nx+Perlin.get_Noise(flow_on_land),
+                                             ny+Perlin.get_Noise(flow_on_land),
+                                             terrain_octave,
+                                             terrain_persistence);
     }
     }
     
@@ -340,9 +347,9 @@ void generate_noise()
     {      
       float nx = float(scl)/20*(float)x/5,ny = float(scl)/20*(float)y/5 ;
       if ((y<cols/2+cliff || y>3*cols/2-cliff) ||(x<rows/2+cliff ||x>3*rows/2-cliff))
-        water[x][y] = noise(nx, ny+flow_in_sea);
+        water[x][y] = Perlin.get_Noise(nx, ny+flow_in_sea);
       else
-        water[x][y] = noise(nx, ny+flow_on_land);
+        water[x][y] = Perlin.get_Noise(nx, ny+flow_on_land);
     }
     }
 }
