@@ -138,6 +138,7 @@ void draw() {
                         dynamic_lighting();
                         generate_noise();
                         render_terrain();
+                        render_water();
 
                         popMatrix();
                         hud();
@@ -163,6 +164,7 @@ void draw() {
                         dynamic_lighting();
                         generate_noise();
                         render_terrain();
+                        render_water();
 
                         popMatrix();
                         hud();
@@ -193,6 +195,7 @@ void draw() {
                         dynamic_lighting();
                         generate_noise();
                         render_terrain();
+                        render_water();
 
                         popMatrix();
                         hud();
