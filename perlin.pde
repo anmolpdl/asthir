@@ -37,8 +37,9 @@ public static class Perlin {
         // 1-D perlin noise implementation
         public static float get_Noise(float x) {
 
-                while(x < 0) {
-                        x += (table_size_ - 1);
+                if (x < 0) {
+                        float q = x / (float)(table_size_ - 1);
+                        x = (q - int(q)) * (table_size_ - 1) + table_size_ - 1;
                 }
 
                 // Converting to range (0-to-(table_size - 1))
@@ -64,11 +65,13 @@ public static class Perlin {
         public static float get_Noise(float x, float y) {
 
                 // Converting to positive values in the required range
-                while(x < 0) {
-                        x += (table_size_ - 1);
+                if (x < 0) {
+                        float q = x / (float)(table_size_ - 1);
+                        x = (q - int(q)) * (table_size_ - 1) + table_size_ - 1;
                 }
-                while(y < 0) {
-                        y += (table_size_ - 1);
+                if (y < 0) {
+                        float q = y / (float)(table_size_ - 1);
+                        y = (q - int(q)) * (table_size_ - 1) + table_size_ - 1;
                 }
 
                 int x0 = floor(x) % (table_size_ - 1);
