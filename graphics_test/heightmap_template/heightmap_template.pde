@@ -1,7 +1,8 @@
-
 import controlP5.*;
 import java.util.*;
 import java.text.*;
+
+State program_state;
 
 //for sliders
 ControlP5 cp5;
@@ -29,6 +30,11 @@ float a, b, c;
 
 //terrain adjustment factors
 int land_factor, water_factor, sea_level, cliff;
+
+//for rain
+int rain_timer;
+Raindrop rain[];
+Snowflake snow[];
 
 //for temporarily storing the 3D matrix before rendering GUI
 PMatrix3D currCameraMatrix;
@@ -73,11 +79,23 @@ void setup(){
   water = new float [watervol*cols][watervol*rows];
   save_img = createImage(cols, rows, RGB);
   
+  rain = new Raindrop[500];
+  for (int i=0;i<500;i++)
+  {
+    rain[i] = new Raindrop();
+  }
+  snow = new Snowflake[200];
+  for (int i=0;i<200;i++)
+  {
+    snow[i] = new Snowflake();
+  }
+  
 
   //start screen
   start_screen = loadImage("start_screen.jpg");
   at_start = true;
   startflag = false;
+  program_state = State.START;
   
   //setting up sliders
   cp5 = new ControlP5(this);
@@ -89,38 +107,114 @@ void setup(){
 
 void draw()
 {
-  if (at_start)
+  switch(program_state)
   {
-    //make start screen
-    image(start_screen, 0, 0, width, height);
-    fill(181, 101, 29, 200);
-    textSize(width/10);
-    textAlign(RIGHT);
-    text("Asthir", width/3, 3*height/5);
-    textSize(width/40);
-    text("Press Enter", width/5, 2*height/3);
-    textSize(width/80);
-    fill(255, 255, 255, 255);
-    textAlign(LEFT);
-    text("Parameters:", 4*width/5, height/50);
+    case START:
+      image(start_screen, 0, 0, width, height);
+      fill(181, 101, 29, 200);
+      textSize(width/10);
+      textAlign(RIGHT);
+      text("Asthir", width/3, 3*height/5);
+      textSize(width/40);
+      text("Press Enter", width/5, 2*height/3);
+      textSize(width/80);
+      fill(255, 255, 255, 255);
+      textAlign(LEFT);
+      text("Parameters:", 4*width/5, height/50);
+      for (int i=0; i<200; i++)
+      {
+        snow[i].display();
+        snow[i].update();
+      }
+      break;
+    case MAIN_NORMAL:
+      // normal code
+      dynamic -=speed;
+      flow_in_sea = dynamic;
+      flow_on_land = dynamic/100;
+      
+      background(135, 206, 250);
+    
+      pushMatrix();
+      translate(w/2,h/2);
+      rotateX(PI/2);
+      translate(-w/2,-h/2);
+      
+      dynamic_lighting();
+      generate_noise();
+      render_terrain();
+      
+      popMatrix();
+      hud();
+      custompan();
+      
+      if (int(random(200)) == 7)
+      {
+        program_state = State.MAIN_RAINING;
+        rain_timer = 150+int(random(300));
+      }
+      break;
+    case MAIN_RAINING:
+      dynamic -=speed;
+      flow_in_sea = 2*dynamic;
+      flow_on_land = dynamic/100;
+    
+      background(125, 178, 250);
+    
+      pushMatrix();
+      translate(w/2,h/2);
+      rotateX(PI/2);
+      translate(-w/2,-h/2);
+      
+      dynamic_lighting();
+      generate_noise();
+      render_terrain();
+      
+      popMatrix();
+      
+      for (int i=0; i<500; i++)
+      {
+        rain[i].display();
+        rain[i].update();
+      }
+      
+      hud();
+      custompan();
+      
+      
+      int r2 = int(random(50));
+      if (rain_timer == 0)
+      {
+        program_state = State.MAIN_NORMAL; 
+      }
+      rain_timer--;
+      
+      break;
+    case MAIN_SNOWING:
+      dynamic -=speed;
+      flow_in_sea = dynamic;
+      flow_on_land = dynamic/100;
+      
+      background(135, 206, 250);
+    
+      pushMatrix();
+      translate(w/2,h/2);
+      rotateX(PI/2);
+      translate(-w/2,-h/2);
+      
+      dynamic_lighting();
+      generate_noise();
+      render_terrain();
+      
+      popMatrix();
+      hud();
+      custompan();
+      break;
   }
-  
-  else
-  {
-    background(135, 206, 250);
-    
-    dynamic -=speed;
-    flow_in_sea = dynamic;
-    flow_on_land = dynamic/100;
-    
-    pushMatrix();
-    translate(w/2,h/2);
-    rotateX(PI/2);
-    translate(-w/2,-h/2);
+}
 
-    dynamic_lighting();
-    generate_noise();
-    
+void render_terrain()
+{    
     save_img.loadPixels();
     //draw the actual thing
     //land
@@ -151,39 +245,60 @@ void draw()
       endShape();
     }
     save_img.updatePixels();
-    //water
-    for (int y=0; y<watervol*rows-1; y++)
-    {
-      beginShape(TRIANGLE_STRIP);
-      for (int x=0;x<watervol*cols; x++)
-      {
-        fill(20, 20, 200, 75);
-        noStroke();
-        vertex(x*scl, y*scl, water_factor*water[x][y]+sea_level);
-        vertex(x*scl, (y+1)*scl, water_factor*water[x][y+1]+sea_level);
-      }
-      endShape();
-    }
-    
-    //beginHUD
-    
-    if (!startflag)
-    {
-      pushMatrix();
-      speed_slider = cp5.addSlider("speed").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(0., 2.0);
-      speed_slider.setValue(speed);
-      
-      //so sliders don't get drawn automatically in 3D space and only on the static camera()
-      cp5.setAutoDraw(false);
-      startflag =true;
-    }
-    guisetup();
-    popMatrix();
-    custompan();
-    //end HUD
-  }
-  //popMatrix();
 }
+
+void render_water()
+{
+  //water
+  for (int y=0; y<watervol*rows-1; y++)
+  {
+    beginShape(TRIANGLE_STRIP);
+    for (int x=0;x<watervol*cols; x++)
+    {
+      fill(20, 20, 200, 75);
+      noStroke();
+      vertex(x*scl, y*scl, water_factor*water[x][y]+sea_level);
+      vertex(x*scl, (y+1)*scl, water_factor*water[x][y+1]+sea_level);
+    }
+    endShape();
+  }
+}
+
+void hud()
+{
+  //beginHUD
+  
+  if (!startflag)
+  {
+    pushMatrix();
+    speed_slider = cp5.addSlider("speed").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(0., 2.0);
+    speed_slider.setValue(speed);
+    
+    //so sliders don't get drawn automatically in 3D space and only on the static camera()
+    cp5.setAutoDraw(false);
+    startflag =true;
+  }
+    
+  // guisetup(); deprecated in favor of hud
+  hint(DISABLE_DEPTH_TEST);
+  PMatrix3D currCameraMatrix = new PMatrix3D(((PGraphics3D)g).camera);
+  camera();
+  noLights();
+  if (program_state == State.MAIN_RAINING)
+  {
+    //for (int i=0; i<500; i++)
+    //{
+    //  rain[i].display();
+    //  rain[i].update();
+    //}
+  }
+  cp5.draw();
+  image(save_img,20,20,100,100);
+  ((PGraphics3D)g).camera = currCameraMatrix;
+  hint(ENABLE_DEPTH_TEST); 
+  //end HUD
+}
+
 void dynamic_lighting()
 {
     ambientLight(172, 136, 111);
@@ -307,28 +422,33 @@ void custompan()
     updateProjmodelview();
   }*/
 }
-void guisetup(){
-   hint(DISABLE_DEPTH_TEST);
-   PMatrix3D currCameraMatrix = new PMatrix3D(((PGraphics3D)g).camera);
-   camera();
-   noLights();
-   cp5.draw();
-   image(save_img,20,20,100,100);
-   ((PGraphics3D)g).camera = currCameraMatrix;
-   hint(ENABLE_DEPTH_TEST); 
-   }
+
+//void guisetup()
+//{
+//   hint(DISABLE_DEPTH_TEST);
+//   PMatrix3D currCameraMatrix = new PMatrix3D(((PGraphics3D)g).camera);
+//   camera();
+//   noLights();
+//   cp5.draw();
+//   image(save_img,20,20,100,100);
+//   ((PGraphics3D)g).camera = currCameraMatrix;
+//   hint(ENABLE_DEPTH_TEST); 
+//}
 
 void keyPressed()
 {
-  if (keyCode == ENTER)
+  if (program_state == State.START)
   {
-    if (at_start)
+    //if (at_start)
+    //{
+    //  at_start = false;
+    //}
+    if (keyCode == ENTER)
     {
-      at_start = false;
-      
+      program_state = State.MAIN_NORMAL;
     }
   }
-  if (!at_start)
+  else
   {
   switch(key)
   {
@@ -376,16 +496,17 @@ void keyPressed()
       break;
     case 'r':
     case 'R':
-      if (!at_start)
-      {
-        at_start = true;
+      //if (!at_start)
+      //{
+        //at_start = true;
+        program_state = State.START;
         cp5.remove("speed");
         popMatrix();
         setup();
-      }
+      //}
       break;
-     case 's':
-     case 'S':
+    case 's':
+    case 'S':
       DateFormat name_format = new SimpleDateFormat("yyyy-MM-dd@HH_mm_ss");
       Date d = new Date();
       String file_name = name_format.format(d);
