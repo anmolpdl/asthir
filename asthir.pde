@@ -51,7 +51,7 @@ void setup() {
 
         w =2000;
         h =2000;
-        scl = 10; //pixel density
+        scl = 20; //pixel density
         watervol = 2;
 
         //position of camera
@@ -66,7 +66,7 @@ void setup() {
         speed = 0.01;
         fov = PI/3; // use Pi/1.4-Pi/1.6 for fisheye
 
-        a = 0.2;
+        a = 0.06;
         b = 0.6;
         c = 1;
 
@@ -100,7 +100,7 @@ void setup() {
         cp5.addSlider("a").setPosition(4*width/5, 1.5*height/60).setSize(height/4, width/68).setRange(0., 0.8).setValue(a).setCaptionLabel("vertical offset");
         cp5.addSlider("b").setPosition(4*width/5, 3.5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8).setValue(b).setCaptionLabel("edge offset");
         cp5.addSlider("c").setPosition(4*width/5, 5.5*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge exponent");
-        //cp5.addSlider("fov").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(PI/4, PI/1.1);
+        //cp5.addSlider("fov").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(PI/4, PI/1.1); //RIP TB
 }
 
 void draw() {
@@ -258,6 +258,7 @@ void render_water() {
 }
 
 void hud() {
+        pushMatrix();
         //beginHUD
 
         if (!startflag) {
@@ -293,6 +294,7 @@ void hud() {
         ((PGraphics3D)g).camera = currCameraMatrix;
         hint(ENABLE_DEPTH_TEST); 
         //end HUD
+        popMatrix();
 }
 
 void dynamic_lighting() {
@@ -409,17 +411,6 @@ void custompan() {
                 updateProjmodelview();
         }*/
 }
-
-// void guisetup() {
-//         hint(DISABLE_DEPTH_TEST);
-//         PMatrix3D currCameraMatrix = new PMatrix3D(((PGraphics3D)g).camera);
-//         camera();
-//         noLights();
-//         cp5.draw();
-//         image(save_img,20,20,100,100);
-//         ((PGraphics3D)g).camera = currCameraMatrix;
-//         hint(ENABLE_DEPTH_TEST); 
-// }
 
 void keyPressed() {
         if (program_state == State.START) {

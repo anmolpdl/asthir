@@ -34,6 +34,7 @@
 #folders
 /output/*
 /application.*/
+/graphics_test/
 /test_scripts/graphics_test/heightmap_template/application.*/
 /test_scripts/graphics_test/application.*/
 /references/
