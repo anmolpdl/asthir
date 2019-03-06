@@ -171,13 +171,6 @@ void draw()
       render_terrain();
       
       popMatrix();
-      
-      for (int i=0; i<500; i++)
-      {
-        rain[i].display();
-        rain[i].update();
-      }
-      
       hud();
       custompan();
       
@@ -188,7 +181,10 @@ void draw()
         program_state = State.MAIN_NORMAL; 
       }
       rain_timer--;
-      
+      if (((int(random(20)) == 7)&&(a > 0.4))||(a > 0.7))
+      {
+        program_state = State.MAIN_SNOWING;
+      }
       break;
     case MAIN_SNOWING:
       dynamic -=speed;
@@ -209,6 +205,16 @@ void draw()
       popMatrix();
       hud();
       custompan();
+      
+      if (rain_timer == 0)
+      {
+        program_state = State.MAIN_NORMAL; 
+      }
+      if (a < 0.25)
+      {
+        program_state = State.MAIN_RAINING;
+      }
+      rain_timer--;
       break;
   }
 }
@@ -286,12 +292,21 @@ void hud()
   noLights();
   if (program_state == State.MAIN_RAINING)
   {
-    //for (int i=0; i<500; i++)
-    //{
-    //  rain[i].display();
-    //  rain[i].update();
-    //}
+    for (int i=0; i<500; i++)
+    {
+      rain[i].display();
+      rain[i].update();
+    }
   }
+  else if (program_state == State.MAIN_SNOWING)
+  {
+    for (int i=0; i<200; i++)
+      {
+        snow[i].display();
+        snow[i].update();
+      } 
+  }
+  
   cp5.draw();
   image(save_img,20,20,100,100);
   ((PGraphics3D)g).camera = currCameraMatrix;
