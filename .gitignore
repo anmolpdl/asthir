@@ -33,7 +33,8 @@
 
 #folders
 /output/*
-/graphics_test/heightmap_template/application.*/
-/graphics_test/application.*/
+/application.*/
+/test_scripts/graphics_test/heightmap_template/application.*/
+/test_scripts/graphics_test/application.*/
 /references/
-/graphics_test/heightmap_template/images/
+/test_scripts/graphics_test/heightmap_template/images/
