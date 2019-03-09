@@ -43,6 +43,7 @@ PGraphics3D g3;
 
 void setup() {
         Perlin.setup(this, 512);
+        setupTree();
         //cam = new PeasyCam(this, w/2, h/2, 1000, 0);
         //cam.setMaximumDistance(3000);
 
@@ -192,6 +193,22 @@ void render_terrain() {
                 }
                 endShape();
         }
+
+        int x0 = cols/2;
+        int y0 = rows/2;
+        float dist = sqrt(pow(cols/2 - x0, 2) + pow(rows/2 - y0, 2));
+        float d = map(dist, 0, (cols/2)*(cols/2) + (rows/2)*(rows/2), 0, sqrt(2));
+        float z0 = ((terrain[x0][y0] + a)*(1-b*pow(d,c)))*land_factor;
+
+        // translate((x0 + rows/2)*scl, (y0 + cols/2)*scl, z0);
+        // fill(255);
+        // box(30);
+        // translate(-(x0 + rows/2)*scl, -(y0 + cols/2)*scl, -z0);
+        float x = (x0 + rows/2)*scl;
+        float y = (y0 + cols/2)*scl;
+        renderTree(x,y,z0);
+        // renderTree(w/2, cameraposY, h/2);
+
         save_img.updatePixels();
 }
 
