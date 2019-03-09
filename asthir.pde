@@ -42,7 +42,6 @@ PMatrix3D currCameraMatrix;
 PGraphics3D g3;
 
 void setup() {
-
         Perlin.setup(this, 512);
         //cam = new PeasyCam(this, w/2, h/2, 1000, 0);
         //cam.setMaximumDistance(3000);
@@ -130,53 +129,12 @@ void draw() {
                 break;
                 case MAIN_NORMAL:
                         // normal code
-                        dynamic -=speed;
-                        flow_in_sea = dynamic;
-                        flow_on_land = dynamic/100;
-
-                        pushMatrix();
-                        translate(w/2,h/2);
-                        rotateX(PI/2);
-                        translate(-w/2,-h/2);
-
-                        dynamic_lighting(light_angle);
-                        generate_noise();
-                        render_terrain();
-                        render_water();
-                        light_angle+=speed/100;
-                        
-                        popMatrix();
-                        hud();
-                        custompan();
-                        
-
                         if (int(random(200)) == 7) {
                                 program_state = State.MAIN_RAINING;
                                 rain_timer = 150+int(random(300));
                         }
                 break;
                 case MAIN_RAINING:
-                        dynamic -=speed;
-                        flow_in_sea = 2*dynamic;
-                        flow_on_land = dynamic/100;
-
-                        background(125, 178, 250);
-
-                        pushMatrix();
-                        translate(w/2,h/2);
-                        rotateX(PI/2);
-                        translate(-w/2,-h/2);
-
-                        dynamic_lighting(light_angle);
-                        generate_noise();
-                        render_terrain();
-                        render_water();
-                        light_angle+=speed/100;
-                        
-                        popMatrix();
-                        hud();
-                        custompan();
-
                         int r2 = int(random(50));
                         if (rain_timer == 0) {
                                 program_state = State.MAIN_NORMAL; 
@@ -187,27 +145,6 @@ void draw() {
                         }
                 break;
                 case MAIN_SNOWING:
-                        dynamic -=speed;
-                        flow_in_sea = dynamic;
-                        flow_on_land = dynamic/100;
-
-                        background(135, 206, 250);
-
-                        pushMatrix();
-                        translate(w/2,h/2);
-                        rotateX(PI/2);
-                        translate(-w/2,-h/2);
-
-                        dynamic_lighting(light_angle);
-                        generate_noise();
-                        render_terrain();
-                        render_water();
-                        light_angle+=speed/100;
-
-                        popMatrix();
-                        hud();
-                        custompan();
-
                         if (rain_timer == 0) {
                                 program_state = State.MAIN_NORMAL; 
                         }
@@ -217,6 +154,23 @@ void draw() {
                         rain_timer--;
                 break;
         }
+        dynamic -=speed;
+        flow_in_sea = dynamic;
+        flow_on_land = dynamic/100;
+        pushMatrix();
+        translate(w/2,h/2);
+        rotateX(PI/2);
+        translate(-w/2,-h/2);
+
+        dynamic_lighting(light_angle);
+        generate_noise();
+        render_terrain();
+        render_water();
+        light_angle+=speed/100;
+                        
+        popMatrix();
+        hud();
+        custompan();
 }
 
 void render_terrain() {    
@@ -304,12 +258,12 @@ void dynamic_lighting(float angle) {
   
         //Sun starts on horizon and peaks at HALF_PI
         //Lowest at 3*Half_pi 
-        if (light_position>3*HALF_PI)
+        if (light_position>=3*HALF_PI)
                 light_alpha = map(abs(light_position), 3*HALF_PI, TWO_PI, 25, 50);
-        else if(light_position<HALF_PI)
+        else if(light_position<=HALF_PI)
                 light_alpha = map(abs(light_position), 0, HALF_PI, 50, 180);
         else
-                light_alpha = map(abs(light_position), HALF_PI, 3*HALF_PI, 180, 25);
+                light_alpha = map(abs(light_position), HALF_PI, 3*HALF_PI, 180,25);
                 
         background(light_alpha, light_alpha, light_alpha);
         
@@ -327,7 +281,7 @@ void dynamic_lighting(float angle) {
         
         //*1.4 to make light look yellowish
         pointLight(light_alpha*1.4, light_alpha*1.4, light_alpha,0,0,0);
-        directionalLight(light_alpha*1.4, light_alpha*1.4, light_alpha,0,0,0);
+        //directionalLight(light_alpha*1.4, light_alpha*1.4, light_alpha,0,1,0);
         
         popMatrix();
 }
@@ -366,14 +320,14 @@ float [] terrain_gradient(float height) {
         float[] colorA = {0, 255, 0, 255}; // green
         float[] colorB = {242, 189, 137, 255}; // brown
         float[] sand = {224,205,235,255}; //sand color
-        if (height < 0.7 && height >0.3) {
+        if (height < 0.7 && height >0.35) {
                 height /= 0.7;
                 for (int i=0; i<3; i++) {
                         terrain_color[i] = colorA[i] + height*(colorB[i]-colorA[i]);
                 }
         }
-        else if (height<0.3) {
-                height /= 0.3;
+        else if (height<0.35) {
+                height /= 0.35;
                 for (int i=0; i<3; i++) {
                         terrain_color[i] = sand[i] + height*(colorB[i]-sand[i]);
                 }
@@ -384,7 +338,9 @@ float [] terrain_gradient(float height) {
 
 void custompan() {
         if (cameraposY>300) {
-                camera(cameraposX,cameraposY,cameraposZ,cameraposX+1,cameraposY,cameraposZ,0,1,0);
+                camera(cameraposX,cameraposY,cameraposZ,
+                        cameraposX+1,cameraposY,cameraposZ,
+                        0,1,0);
                 //defining the perspective projection parameters
                 float cameraZ = (height/2.0) / tan(fov/2.0);
 
