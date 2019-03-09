@@ -109,6 +109,7 @@ void setup() {
 }
 
 void draw() {
+  //note: renderscene() does what you think it does
         switch(program_state) {
                 case START:
                         image(start_screen, 0, 0, width, height);
@@ -133,6 +134,7 @@ void draw() {
                                 program_state = State.MAIN_RAINING;
                                 rain_timer = 150+int(random(300));
                         }
+                        renderscene();
                 break;
                 case MAIN_RAINING:
                         int r2 = int(random(50));
@@ -143,6 +145,7 @@ void draw() {
                         if (((int(random(20)) == 7)&&(a > 0.4))||(a > 0.7)) {
                                 program_state = State.MAIN_SNOWING;
                         }
+                        renderscene();
                 break;
                 case MAIN_SNOWING:
                         if (rain_timer == 0) {
@@ -152,26 +155,9 @@ void draw() {
                                 program_state = State.MAIN_RAINING;
                         }
                         rain_timer--;
+                        renderscene();
                 break;
-        }
-        if (program_state != State.START){
-                dynamic -=speed;
-                flow_in_sea = dynamic;
-                flow_on_land = dynamic/100;
-                pushMatrix();
-                translate(w/2,h/2);
-                rotateX(PI/2);
-                translate(-w/2,-h/2);
-
-                dynamic_lighting(light_angle);
-                generate_noise();
-                render_terrain();
-                render_water();
-                light_angle+=speed/100;
-                popMatrix();
-                hud();
-                custompan();
-        }        
+        }     
 }
 
 void render_terrain() {    
@@ -335,6 +321,24 @@ float [] terrain_gradient(float height) {
         } 
 
         return terrain_color;
+}
+void renderscene(){
+        dynamic -=speed;
+        flow_in_sea = dynamic;
+        flow_on_land = dynamic/100;
+        pushMatrix();
+        translate(w/2,h/2);
+        rotateX(PI/2);
+        translate(-w/2,-h/2);
+
+        dynamic_lighting(light_angle);
+        generate_noise();
+        render_terrain();
+        render_water();
+        light_angle+=speed/100;
+        popMatrix();
+        hud();
+        custompan();
 }
 
 void custompan() {
