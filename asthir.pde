@@ -29,7 +29,7 @@ float dynamic, speed, fov; // dynamic = level of dynamicness of terrain, use fov
 float a, b, c;
 
 //terrain adjustment factors
-int land_factor, water_factor, sea_level, cliff;
+int land_factor, water_factor, sea_level, cliff, terrain_octave;
 
 //for rain
 int rain_timer;
@@ -51,7 +51,7 @@ void setup() {
 
         w =2000;
         h =2000;
-        scl = 20; //pixel density
+        scl = 10; //pixel density
         watervol = 2;
 
         //position of camera
@@ -74,6 +74,7 @@ void setup() {
         water_factor = 75;
         sea_level = 200;
         cliff = 25;
+        terrain_octave = 4;
 
         //dynam alloc memory
         terrain = new float[cols][rows];
@@ -100,6 +101,7 @@ void setup() {
         cp5.addSlider("a").setPosition(4*width/5, 1.5*height/60).setSize(height/4, width/68).setRange(0., 0.8).setValue(a).setCaptionLabel("vertical offset");
         cp5.addSlider("b").setPosition(4*width/5, 3.5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8).setValue(b).setCaptionLabel("edge offset");
         cp5.addSlider("c").setPosition(4*width/5, 5.5*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge exponent");
+        cp5.addSlider("terrain_octave").setPosition(4*width/5, 7.5*height/60).setSize(height/4, width/68).setRange(1, 10).setValue(terrain_octave).setCaptionLabel("octaves");
         //cp5.addSlider("fov").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(PI/4, PI/1.1); //RIP TB
 }
 
@@ -139,7 +141,18 @@ void draw() {
                         generate_noise();
                         render_terrain();
                         render_water();
+                        
+                        // making a box
+                        //int x0 = cols/2;
+                        //int y0 = rows/2;
+                        //float z0 = land_factor*terrain[x0][y0]+cliff;
+                        
+                        //translate((x0+rows/2)*scl, (y0+cols/2)*scl, z0);
+                        //fill(255);
+                        //box(30);
+                        //translate(-(x0+rows/2)*scl, -(y0+cols/2)*scl, -z0);
 
+                        
                         popMatrix();
                         hud();
                         custompan();
@@ -219,24 +232,24 @@ void render_terrain() {
         for (int y=0; y<rows-1; y++) {
                 beginShape(TRIANGLE_STRIP);
                 for (int x=0;x<cols; x++) {
-                        float dist = sqrt(pow(cols/2-x,2)+pow(rows/2-y,2));
-                        //mapping upto sqrt(2) instead of 1 for island illusion
-                        float d = map(dist,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
-                        float dist1 = sqrt(pow(cols/2-x,2)+pow(rows/2-y-1,2));
-                        float d1 = map(dist1,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
-                        float e =(terrain[x][y] + a)*(1 - b*pow(d,c));
-                        float e1 =(terrain[x][y+1] + a)* (1- b*pow(d1,c));
+                        //float dist = sqrt(pow(cols/2-x,2)+pow(rows/2-y,2));
+                        ////mapping upto sqrt(2) instead of 1 for island illusion
+                        //float d = map(dist,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
+                        //float dist1 = sqrt(pow(cols/2-x,2)+pow(rows/2-y-1,2));
+                        //float d1 = map(dist1,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
+                        //float e =(terrain[x][y] + a)*(1 - b*pow(d,c));
+                        //float e1 =(terrain[x][y+1] + a)* (1- b*pow(d1,c));
 
                         //land factor is 500
-                        float[] terrain_color = terrain_gradient(map(land_factor*e+cliff, 0, land_factor+cliff, 0, 1));
+                        float[] terrain_color = terrain_gradient(map(land_factor*terrain[x][y]+cliff, 0, land_factor+cliff, 0, 1));
 
                         // saving to pixels array
                         save_img.pixels[y*cols+x] = color(terrain_color[0], terrain_color[1], terrain_color[2]);
                         save_img.pixels[(y+1)*cols+x] = color(terrain_color[0], terrain_color[1], terrain_color[2]);
                         fill(terrain_color[0], terrain_color[1], terrain_color[2], 255);
                         noStroke();
-                        vertex((x+rows/2)*scl, (y+cols/2)*scl, land_factor*e+cliff);
-                        vertex((x+rows/2)*scl, (y+cols/2+1)*scl, land_factor*e1+cliff);
+                        vertex((x+rows/2)*scl, (y+cols/2)*scl, land_factor*terrain[x][y]+cliff);
+                        vertex((x+rows/2)*scl, (y+cols/2+1)*scl, land_factor*terrain[x][y+1]+cliff);
                 }
                 endShape();
         }
@@ -305,16 +318,20 @@ void dynamic_lighting() {
 
 void generate_noise() {
         //land
-        int terrain_octave = 10;
+        //int terrain_octave = 10;
         float terrain_persistence = 0.35;
 
         for (int y = 0; y < rows; y++) {
                 for (int x = 0; x < cols; x++) {      
                 float nx = (float)scl/20*(float)x/12,ny = (float)scl/20*(float)y/12 ;
-                terrain[x][y] = Perlin.get_OctaveNoise(nx+Perlin.get_Noise(flow_on_land),
+                float e = Perlin.get_OctaveNoise(nx+Perlin.get_Noise(flow_on_land),
                                                         ny+Perlin.get_Noise(flow_on_land),
                                                         terrain_octave,
                                                         terrain_persistence);
+                float dist = sqrt(pow(cols/2-x,2)+pow(rows/2-y,2));
+                //mapping upto sqrt(2) instead of 1 for island illusion
+                float d = map(dist,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
+                terrain[x][y] =(e + a)*(1 - b*pow(d, c));
                 }
         }
 
