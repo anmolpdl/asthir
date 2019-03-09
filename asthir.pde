@@ -154,23 +154,24 @@ void draw() {
                         rain_timer--;
                 break;
         }
-        dynamic -=speed;
-        flow_in_sea = dynamic;
-        flow_on_land = dynamic/100;
-        pushMatrix();
-        translate(w/2,h/2);
-        rotateX(PI/2);
-        translate(-w/2,-h/2);
+        if (program_state != State.START){
+                dynamic -=speed;
+                flow_in_sea = dynamic;
+                flow_on_land = dynamic/100;
+                pushMatrix();
+                translate(w/2,h/2);
+                rotateX(PI/2);
+                translate(-w/2,-h/2);
 
-        dynamic_lighting(light_angle);
-        generate_noise();
-        render_terrain();
-        render_water();
-        light_angle+=speed/100;
-                        
-        popMatrix();
-        hud();
-        custompan();
+                dynamic_lighting(light_angle);
+                generate_noise();
+                render_terrain();
+                render_water();
+                light_angle+=speed/100;
+                popMatrix();
+                hud();
+                custompan();
+        }        
 }
 
 void render_terrain() {    
