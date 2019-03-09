@@ -4,13 +4,15 @@ import java.text.*;
 
 State program_state;
 
-//for sliders
+//for sliders and fps
 ControlP5 cp5;
 Slider speed_slider;
+Textlabel fps;
 
 PImage start_screen, save_img;
 //for img parameters
 PrintWriter datafile;
+
 
 //start screen booleans
 boolean at_start, startflag;
@@ -101,11 +103,12 @@ void setup() {
 
         //setting up sliders
         cp5 = new ControlP5(this);
+        fps=cp5.addFrameRate().setInterval(10).setPosition(width/70,0).setColor(255);
         cp5.addSlider("a").setPosition(4*width/5, 1.5*height/60).setSize(height/4, width/68).setRange(0., 0.8).setValue(a).setCaptionLabel("vertical offset");
         cp5.addSlider("b").setPosition(4*width/5, 3.5*height/60).setSize(height/4, width/68).setRange(0.5, 0.8).setValue(b).setCaptionLabel("edge offset");
         cp5.addSlider("c").setPosition(4*width/5, 5.5*height/60).setSize(height/4, width/68).setRange(0., 3.0).setValue(c).setCaptionLabel("edge exponent");
         cp5.addSlider("terrain_octave").setPosition(4*width/5, 7.5*height/60).setSize(height/4, width/68).setRange(1, 10).setValue(terrain_octave).setCaptionLabel("octaves");
-        //cp5.addSlider("fov").setPosition(width/50, 19*height/30).setSize(width/60, height/3).setRange(PI/4, PI/1.1); //RIP TB
+        
 }
 
 void draw() {
@@ -210,7 +213,6 @@ void hud() {
                 startflag =true;
         }
 
-        // guisetup(); deprecated in favor of hud
         hint(DISABLE_DEPTH_TEST);
         PMatrix3D currCameraMatrix = new PMatrix3D(((PGraphics3D)g).camera);
         camera();
@@ -229,7 +231,7 @@ void hud() {
         }
 
         cp5.draw();
-        image(save_img,20,20,100,100);
+        image(save_img,width/70,height/40,100,100);
         ((PGraphics3D)g).camera = currCameraMatrix;
         hint(ENABLE_DEPTH_TEST); 
         //end HUD
@@ -430,7 +432,8 @@ void keyPressed() {
                                 save_img.save("./output/MAP"+file_name+".jpg");
                                 datafile  = createWriter("./output/DATA"+file_name+".txt");
                                 //to store noise data
-                                datafile.println("a:"+str(a)+",b:"+str(b)+",c:"+str(c));
+                                datafile.println("a:"+str(a)+",b:"+str(b)+",c:"+str(c)+
+                                ",scl:"+str(scl)+",fps:"+str(frameRate));
                                 datafile.flush();
                                 datafile.close();
                         break;
