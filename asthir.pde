@@ -23,6 +23,7 @@ float[][] terrain, water;
 float flow_on_land, flow_in_sea; //water flows slower on land than in sea
 float cameraposX, cameraposY, cameraposZ;
 float dynamic, speed, fov; // dynamic = level of dynamicness of terrain, use fov = Pi/1.4-Pi/1.6 for fisheye
+float light_angle;
 
 //constants for island creation
 //a pushes everything up, b pushes edges down, c controls the quickness of dropoff, set a&b to 0 for default
@@ -51,7 +52,7 @@ void setup() {
 
         w =2000;
         h =2000;
-        scl = 10; //pixel density
+        scl = 20; //pixel density
         watervol = 2;
 
         //position of camera
@@ -61,6 +62,9 @@ void setup() {
 
         cols = w/scl;
         rows = h/scl;
+        
+        //starting light state- 0=morning, PI/2=noon, PI=evening,3PI/2=night
+        light_angle = HALF_PI;
 
         dynamic = 0;
         speed = 0.01;
@@ -130,32 +134,21 @@ void draw() {
                         flow_in_sea = dynamic;
                         flow_on_land = dynamic/100;
 
-                        background(135, 206, 250);
-
                         pushMatrix();
                         translate(w/2,h/2);
                         rotateX(PI/2);
                         translate(-w/2,-h/2);
 
-                        dynamic_lighting();
+                        dynamic_lighting(light_angle);
                         generate_noise();
                         render_terrain();
                         render_water();
-                        
-                        // making a box
-                        //int x0 = cols/2;
-                        //int y0 = rows/2;
-                        //float z0 = land_factor*terrain[x0][y0]+cliff;
-                        
-                        //translate((x0+rows/2)*scl, (y0+cols/2)*scl, z0);
-                        //fill(255);
-                        //box(30);
-                        //translate(-(x0+rows/2)*scl, -(y0+cols/2)*scl, -z0);
-
+                        light_angle+=speed/100;
                         
                         popMatrix();
                         hud();
                         custompan();
+                        
 
                         if (int(random(200)) == 7) {
                                 program_state = State.MAIN_RAINING;
@@ -174,15 +167,15 @@ void draw() {
                         rotateX(PI/2);
                         translate(-w/2,-h/2);
 
-                        dynamic_lighting();
+                        dynamic_lighting(light_angle);
                         generate_noise();
                         render_terrain();
                         render_water();
-
+                        light_angle+=speed/100;
+                        
                         popMatrix();
                         hud();
                         custompan();
-
 
                         int r2 = int(random(50));
                         if (rain_timer == 0) {
@@ -205,10 +198,11 @@ void draw() {
                         rotateX(PI/2);
                         translate(-w/2,-h/2);
 
-                        dynamic_lighting();
+                        dynamic_lighting(light_angle);
                         generate_noise();
                         render_terrain();
                         render_water();
+                        light_angle+=speed/100;
 
                         popMatrix();
                         hud();
@@ -232,15 +226,6 @@ void render_terrain() {
         for (int y=0; y<rows-1; y++) {
                 beginShape(TRIANGLE_STRIP);
                 for (int x=0;x<cols; x++) {
-                        //float dist = sqrt(pow(cols/2-x,2)+pow(rows/2-y,2));
-                        ////mapping upto sqrt(2) instead of 1 for island illusion
-                        //float d = map(dist,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
-                        //float dist1 = sqrt(pow(cols/2-x,2)+pow(rows/2-y-1,2));
-                        //float d1 = map(dist1,0,sqrt(cols/2*cols/2+rows/2*rows/2),0,sqrt(2));
-                        //float e =(terrain[x][y] + a)*(1 - b*pow(d,c));
-                        //float e1 =(terrain[x][y+1] + a)* (1- b*pow(d1,c));
-
-                        //land factor is 500
                         float[] terrain_color = terrain_gradient(map(land_factor*terrain[x][y]+cliff, 0, land_factor+cliff, 0, 1));
 
                         // saving to pixels array
@@ -310,17 +295,46 @@ void hud() {
         popMatrix();
 }
 
-void dynamic_lighting() {
-        ambientLight(172, 136, 111);
-        directionalLight(50, 50, 50, 0, 0, -1);
-        pointLight(150, 150, 150, w/2, h/2, 100);
+void dynamic_lighting(float angle) {
+         //the sun (sphere) revolves arounf the canvas
+         //current position of sun
+        float light_position = angle % TWO_PI;
+        //intensity
+        float light_alpha;
+  
+        //Sun starts on horizon and peaks at HALF_PI
+        //Lowest at 3*Half_pi 
+        if (light_position>3*HALF_PI)
+                light_alpha = map(abs(light_position), 3*HALF_PI, TWO_PI, 25, 50);
+        else if(light_position<HALF_PI)
+                light_alpha = map(abs(light_position), 0, HALF_PI, 50, 180);
+        else
+                light_alpha = map(abs(light_position), HALF_PI, 3*HALF_PI, 180, 25);
+                
+        background(light_alpha, light_alpha, light_alpha);
+        
+        pushMatrix();
+        translate(w,h,0);
+        rotateX(-angle);
+        
+        //*10 so the sun(sphere) is at a faraway distance
+        translate(0,-10*h,0);
+        fill(255,255,255);
+        sphere(200);
+        
+        //there's some ambient light(+25) even at night, ambient light is dimmer than usual light by a factor of 10 (/10)
+        ambientLight(light_alpha/10+25,light_alpha/10+25,light_alpha/10+25);
+        
+        //*1.4 to make light look yellowish
+        pointLight(light_alpha*1.4, light_alpha*1.4, light_alpha,0,0,0);
+        directionalLight(light_alpha*1.4, light_alpha*1.4, light_alpha,0,0,0);
+        
+        popMatrix();
 }
 
 void generate_noise() {
         //land
-        //int terrain_octave = 10;
         float terrain_persistence = 0.35;
-
         for (int y = 0; y < rows; y++) {
                 for (int x = 0; x < cols; x++) {      
                 float nx = (float)scl/20*(float)x/12,ny = (float)scl/20*(float)y/12 ;
@@ -349,11 +363,9 @@ void generate_noise() {
 
 float [] terrain_gradient(float height) {
         float[] terrain_color = {255, 255, 255, 255}; // default snow
-        // height between 0 to 1
-
         float[] colorA = {0, 255, 0, 255}; // green
         float[] colorB = {242, 189, 137, 255}; // brown
-        float[] sand = {224,205,235,255};
+        float[] sand = {224,205,235,255}; //sand color
         if (height < 0.7 && height >0.3) {
                 height /= 0.7;
                 for (int i=0; i<3; i++) {
@@ -372,14 +384,12 @@ float [] terrain_gradient(float height) {
 
 void custompan() {
         if (cameraposY>300) {
-                camera(cameraposX,cameraposY,cameraposZ,cameraposX+100,cameraposY,cameraposZ,0,1,0);
-
+                camera(cameraposX,cameraposY,cameraposZ,cameraposX+1,cameraposY,cameraposZ,0,1,0);
                 //defining the perspective projection parameters
-
                 float cameraZ = (height/2.0) / tan(fov/2.0);
 
                 //projection
-                perspective(fov, float(width)/float(height), cameraZ/10.0, cameraZ*10.0);
+                perspective(fov, float(width)/float(height), cameraZ/10.0, cameraZ*100.0);
                 cameraposY-=speed;
         }
         else {
@@ -389,51 +399,10 @@ void custompan() {
                 translate(-w,-cameraposY,-h/2);
                 endCamera();
         }
-        /*
-        note: source code for projection(perspective):
-        for later reference, can be modified along with frustum
-        (that has the actual projection matrix)
-        to create other projections*/
-
-        /*@Override
-        //fov = vertical field of view in degrees
-        public void perspective(float fov, float aspect, float zNear, float zFar)  {
-                float ymax = zNear * (float) Math.tan(fov / 2);
-                float ymin = -ymax;
-                float xmin = ymin * aspect;
-                float xmax = ymax * aspect;
-                frustum(xmin, xmax, ymin, ymax, zNear, zFar);
-        }
-        /*@Override
-        public void frustum(float left, float right, float bottom, float top,
-        float znear, float zfar) {
-                // Flushing geometry with a different perspective configuration.
-                flush();
-
-                cameraFOV = 2 * (float) Math.atan2(top, znear); //atan2(y,x) gives atan(y/x)
-                cameraAspect = left / bottom;
-                cameraNear = znear;
-                cameraFar = zfar;
-
-                float n2 = 2 * znear;
-                float w = right - left;
-                float h = top - bottom;
-                float d = zfar - znear;
-
-                projection.set(n2 / w,       0,  (right + left) / w,                0,
-                0, -n2 / h,  (top + bottom) / h,                0,
-                0,       0, -(zfar + znear) / d, -(n2 * zfar) / d,
-                0,       0,                  -1,                0);
-
-                updateProjmodelview();
-        }*/
 }
 
 void keyPressed() {
         if (program_state == State.START) {
-                // if (at_start) {
-                //         at_start = false;
-                // }
                 if (keyCode == ENTER) {
                         program_state = State.MAIN_NORMAL;
                 }
@@ -484,13 +453,10 @@ void keyPressed() {
                         break;
                         case 'r':
                         case 'R':
-                                //if (!at_start) {
-                                //at_start = true;
                                 program_state = State.START;
                                 cp5.remove("speed");
                                 popMatrix();
                                 setup();
-                                //}
                         break;
                         case 's':
                         case 'S':
