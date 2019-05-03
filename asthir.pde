@@ -133,9 +133,9 @@ void draw() {
                 break;
                 case MAIN_NORMAL:
                         // normal code
-                        if (int(random(200)) == 7) {
-                                program_state = State.MAIN_RAINING;
-                                rain_timer = 150+int(random(300));
+                        if (int(random(300)) == 7) {
+                                //program_state = State.MAIN_RAINING;
+                                rain_timer = 100+int(random(200));
                         }
                         renderscene();
                 break;
@@ -155,7 +155,7 @@ void draw() {
                                 program_state = State.MAIN_NORMAL; 
                         }
                         if (a < 0.25) {
-                                program_state = State.MAIN_RAINING;
+                                //program_state = State.MAIN_RAINING;
                         }
                         rain_timer--;
                         renderscene();
